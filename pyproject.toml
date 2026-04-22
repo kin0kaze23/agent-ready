@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-ready"
+version = "0.1.0"
+description = "Detect what your AI agent is missing. Install it. Get ready."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+agent-ready = "agent_ready.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
