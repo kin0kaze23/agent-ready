@@ -1,43 +1,46 @@
 # NOW — agent-ready
 
-> Current focused work. Replaces no other doc; provides immediate context.
+> Current focused work. Provides immediate context for the next agent picking up this repo.
 
 ## Status
 
-**Phase 1 — detect path live against a synthetic trace shape.** 28 tests pass, ruff clean. `fix`/`verify`/`undo` are intentional stubs awaiting security review.
+**Phase 2.A complete.** 41 tests pass, ruff clean, v0.2.0. CLI auto-detects input format across raw text, trace-eval scorecard JSON, synthetic diagnose, and task phrases.
 
-**Important reality check:** the real `trace-eval` is at v0.5.0 with a richer JSON output (scorecard + friction_flags) than our `schema/trace.v1.json` declares. Our mapper does NOT yet consume real trace-eval output. This is the Phase 2 top priority — see `docs/INTEGRATION.md`.
+## What Works Today (Phase 1 + 2.A)
 
-## What Works Today
-
-- `agent-ready detect --task "deploy my site"` — plain-English task → Plan. **Most useful path today for non-devs.**
-- `agent-ready detect --from <synthetic-diagnose.json>` — works against our internal format (see `tests/fixtures/` for examples).
-- `agent-ready detect --json` — machine-readable Plan output.
-- `agent-ready status` — lists the 5 Phase 1 capabilities.
-- Python API: `from agent_ready import plan_from_task, plan_from_diagnose, render_human`.
+- `agent-ready detect --task "deploy my site"` — intent-based, no trace needed.
+- `cat session.jsonl | agent-ready detect` — raw trace text, highest recall path.
+- `trace-eval run ... --format json | agent-ready detect` — trace-eval scorecard (lower recall — see `docs/INTEGRATION.md § Known Limits`).
+- `agent-ready detect --from tests/fixtures/diagnose_vercel_missing.json` — synthetic shape still supported.
+- `agent-ready detect --json` — machine-readable Plan for agents.
+- `agent-ready status` / `agent-ready schema` — introspection.
+- Python API: `from agent_ready import plan_from_text, plan_from_task, plan_from_trace_eval_json, render_human`.
 
 ## What Does NOT Work Yet
 
-- ❌ Consuming real `trace-eval run <file> --format json` output — needs `agent_ready/adapters/trace_eval.py` (Phase 2, ~0.5–1 day).
-- ❌ `fix` / `verify` / `undo` — pending security review of the install path.
-- ❌ MCP server — Phase 2.
+- ❌ `fix` / `verify` / `undo` — pending Phase 2.B security review.
+- ❌ First capability module (real installer code) — Phase 2.C.
+- ❌ MCP server — Phase 2.D.
+- ❌ `trace-eval`-side integration (`install_capability` action type) — optional future work, see `docs/INTEGRATION.md`.
 
-## Immediate Next Steps (in order)
+## Immediate Next Steps (in order, for the next agent)
 
-1. **Commit + push** the Phase 1 scaffold. It's a solid base for Phase 2 agents.
-2. **Phase 2.A — integration adapter**: build `agent_ready/adapters/trace_eval.py`. Spec in `docs/INTEGRATION.md`. Estimated 0.5–1 day.
-3. **Phase 2.B — security review** of the install path before any `fix` code lands.
-4. **Phase 2.C — first capability module**: `agent_ready/capabilities/vercel_cli.py` with real `detect`/`install`/`auth`/`verify`/`undo`.
-5. **Phase 2.D — MCP server** wrapping `detect` (and eventually `fix`).
+1. **Phase 2.B — Security review** of the install path. Draft the review doc at `docs/SECURITY_REVIEW.md` answering: sandboxing model, credential storage, sudo policy, rollback guarantees, interruption handling. Required before any `fix` code lands.
+2. **Phase 2.C — First capability module** — `agent_ready/capabilities/vercel_cli.py`. Implement `detect`, `install`, `auth`, `verify`, `undo` as pure functions. Add tests against a disposable environment. One capability fully working is worth more than five half-working.
+3. **Phase 2.D — MCP server** — wrap `detect` (and later `fix`) as MCP tools. Interface spec in `docs/AGENT_INTERFACE.md`.
 
 ## For Other AI Agents Picking This Up
 
-- `docs/INTEGRATION.md` is the "start here" doc — it names the exact file to create, what input it takes, what output it must produce, and how to test it.
-- `docs/EXAMPLES.md` shows the working paths.
-- `CONTRIBUTING.md` sets the bar for capability-adding PRs (safety review block is non-negotiable).
+Start here:
+- `AGENT_PICKUP.md` — focused pickup guide, what to do first.
+- `docs/INTEGRATION.md` — how we relate to trace-eval v0.5.0.
+- `docs/ARCHITECTURE.md` — system design.
+- `docs/DESIGN.md` — non-dev UX principles (read before changing any user-facing text).
+- `CONTRIBUTING.md` — safety-review block is mandatory for installer PRs.
 
-## Open Design Questions
+## Open Design Questions (for Phase 2.B/C discussions)
 
-- Sandboxing model for `fix`: subshell, container, or trust the user's env?
-- User-action unblock signal: stdin line vs. sentinel file?
-- Credential storage: OS keychain vs. `.env` vs. delegate to each tool's native store?
+- **Sandboxing model for `fix`**: subshell, container, or trust the user's environment?
+- **User-action unblock signal**: stdin line vs. sentinel file (for async agents)?
+- **Credential storage**: OS keychain, `.env`, or delegate to each tool's native store?
+- **Approval cadence**: per-capability vs. per-session vs. per-step?

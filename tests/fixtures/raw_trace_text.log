@@ -1,0 +1,7 @@
+[10:02:14] agent: deploy the site
+[10:02:14] shell: $ vercel --prod
+[10:02:14] ERROR: command not found: vercel
+[10:02:16] agent: try gh
+[10:02:16] shell: $ gh auth status
+[10:02:16] ERROR: command not found: gh
+[10:02:17] agent: giving up — need tools

@@ -1,6 +1,6 @@
 # Integration with trace-eval (v0.5.0)
 
-> Honest accounting of how `agent-ready` relates to the real `trace-eval` today, and what still needs to be built.
+> How `agent-ready` relates to the real `trace-eval` today, what the adapter covers, and what still needs to close the loop.
 
 ---
 
@@ -16,7 +16,7 @@
 | Remediation scope | Prompt engineering, scoring profile, CI gate, fix errors in code | Install tools, create accounts, handle auth, paste API keys |
 | Action safety | Most actions require approval; `--apply-safe` for config-only | All installs require approval; no blanket yes |
 
-Neither tool can do the other's job without this gap.
+Neither tool can do the other's job without this bridge.
 
 ---
 
@@ -31,89 +31,65 @@ trace-eval **does not** install CLIs, create accounts, or manage API keys. That'
 
 ---
 
-## What agent-ready Does Today (Phase 1)
+## What agent-ready Does Today (Phase 2.A live)
 
-- Reads a **simplified** trace-eval-shaped JSON (via `mapper.plan_from_diagnose`).
-- Matches each error entry's `maps_to_capability` or `pattern_id` against the capability registry.
-- Emits a `Plan` — the sequence of install / account / auth / verify steps needed.
-- Can also be driven by a plain-English task phrase (`mapper.plan_from_task`).
+- **Auto-detects input format** — raw text / JSONL / trace-eval scorecard JSON / synthetic diagnose / task phrase.
+- Matches against `schema/error-patterns.v1.json` (canonical here — trace-eval uses a different, event-based model).
+- Emits a `Plan` — the sequence of install / account / auth / verify steps.
 - `fix` / `verify` / `undo` are intentional stubs pending security review.
 
----
+### The three input surfaces
 
-## The Gap — What Phase 2 Must Close
-
-The mapper reads a JSON shape that **does not match real trace-eval v0.5.0 output**.
-
-### Real trace-eval output (abbreviated)
-
-```json
-{
-  "total_score": 28.29,
-  "dimension_scores": {"reliability": 0.0, "efficiency": 30.0, ...},
-  "friction_flags": [
-    {"id": "reliability_errors", "severity": "medium",
-     "dimension": "reliability", "event_index": 23,
-     "suggestion": "Review 90 error(s) at event indices [...]"}
-  ],
-  ...
-}
-```
-
-### What agent-ready's mapper currently expects
-
-```json
-{
-  "schema_version": "1.0",
-  "score": 70,
-  "verdict": "blocked_by_missing_capability",
-  "errors": [
-    {"pattern_id": "cmd_not_found_vercel", "maps_to_capability": "vercel_cli", ...}
-  ]
-}
-```
-
-### Phase 2 — Bridge Plan
-
-Build `agent_ready/adapters/trace_eval.py`:
-
-1. **Input**: real trace-eval scorecard JSON.
-2. **Extract raw error lines** from the trace events referenced by `friction_flags[].event_index`.
-3. **Match** those lines against `schema/error-patterns.v1.json` (agent-ready's catalog).
-4. **Emit** the simplified shape our mapper already consumes.
-
-Alternative: extend trace-eval with a new `RemediationAction` type (`install_capability`) that emits pattern IDs agent-ready understands. Needs coordinated PR.
+| Input | How | When to use |
+|-------|-----|------------|
+| **Raw trace text** | `cat session.jsonl \| agent-ready detect` | Simplest. Works with any agent surface that emits readable error text. **Highest recall today.** |
+| **trace-eval scorecard** | `trace-eval run ... --format json \| agent-ready detect` | When you already ran trace-eval and want to double-dip. Note: scorecards summarize errors by event index, so pattern matching has lower recall than raw text. See "Known Limits" below. |
+| **Task phrase** | `agent-ready detect --task "deploy my site"` | Preemptive. No trace needed. Matches against `related_tasks` on each capability. |
 
 ---
 
-## The Simplest Usable Path for Non-Devs (near-term)
+## Known Limits — Real Scorecard Precision
 
-Until the adapter exists, the realistic flow is:
+`trace-eval`'s scorecard `friction_flags[].suggestion` often reads like:
 
-```bash
-# User's agent session produces a trace file session.jsonl
-# The agent (or user) pipes the raw trace text to agent-ready:
-cat session.jsonl | agent-ready detect --from -   # (requires the adapter work above)
+> "Review 90 error(s) at event indices [23, 32, 61, ...]"
 
-# OR — use task-intent mode, which works today:
-agent-ready detect --task "deploy my portfolio"
-```
+The **actual error text** (`command not found: vercel`) lives in the trace events themselves, referenced by index. The scorecard-only adapter (`plan_from_trace_eval_json`) will match patterns that appear verbatim in suggestions, but will miss patterns that are only in the underlying trace.
 
-The `--task` path is fully functional today and is the primary value delivery for non-devs who haven't even run their agent yet: predict what will be missing, offer to set it up before the failure.
+Two ways to get full precision:
+
+1. **`plan_from_trace_eval_with_trace(scorecard, trace_path)`** (Python API) — combines scorecard with the raw trace file.
+2. **Raw-text adapter** (CLI) — skip the scorecard entirely: `cat trace.jsonl | agent-ready detect`. Higher recall with one less moving part.
 
 ---
 
-## How to Pick This Up (for the Next Agent in OpenCode)
+## Further Cross-Repo Integration (Phase 2.B+)
 
-1. Read this file and `docs/ARCHITECTURE.md`.
-2. Read `trace_eval/schema.py` and `trace_eval/report.py` in the trace-eval repo to understand the real JSON shape.
-3. Build `agent_ready/adapters/trace_eval.py`.
-4. Add fixture: run `trace-eval run <sample> --format json` against one of its own examples and save the output under `tests/fixtures/trace_eval_scorecard_*.json`.
-5. Add test: `plan = from_trace_eval_json(fixture)` produces the expected capability set.
-6. Update `agent-ready detect --from <file>` to auto-detect real vs simplified format.
-7. Remove the "draft" banner from `schema/trace.v1.json` once reconciled.
+### Option A — trace-eval adds an `install_capability` action type
 
-Estimated effort: **0.5–1 day** for a focused agent.
+Cleanest architecture. `trace_eval.remediation.ACTION_TYPES` gains a new entry that emits `agent-ready`-compatible capability IDs. trace-eval's `loop --apply-safe` could invoke `agent-ready fix` for the user.
+
+**Scope:** modify trace-eval's `remediation.py`, add reliability-judge hook that triggers when command-not-found patterns are detected. Coordinated PR in both repos.
+
+### Option B — agent-ready reads trace-eval's event stream directly
+
+Add an adapter that reads trace-eval's canonical event schema (from `trace_eval/schema.py`) and scans individual event payloads for error patterns. More robust than the scorecard path.
+
+**Scope:** `agent_ready/adapters/trace_eval_events.py`. Requires parsing trace-eval's JSONL event format.
+
+### Option C — status quo
+
+Keep the raw-text adapter as the primary path. It works today and has the highest recall.
+
+---
+
+## How to Pick This Up (for Agents Continuing This Work)
+
+Phase 2.A is **complete**. The next priorities are:
+
+1. **Phase 2.B — Security review** of the install path. Required before any `fix` code lands. See `docs/ARCHITECTURE.md § Safety`.
+2. **Phase 2.C — First capability module**: `agent_ready/capabilities/vercel_cli.py` implementing `detect`, `install`, `auth`, `verify`, `undo`. One capability end-to-end before adding more.
+3. **Phase 2.D — MCP server** wrapping `detect` (and eventually `fix`).
 
 ---
 
@@ -125,6 +101,9 @@ Estimated effort: **0.5–1 day** for a focused agent.
 | Pattern catalog | ✅ Working |
 | `plan_from_task` (task-phrase → plan) | ✅ Working |
 | `plan_from_diagnose` (synthetic schema → plan) | ✅ Working |
-| **Adapter for real trace-eval output** | ❌ **Phase 2 task** |
-| `fix` / `verify` / `undo` | ❌ Stubs — awaiting security review |
-| MCP server | ❌ Phase 2 |
+| **Text adapter (raw trace → plan)** | ✅ **Phase 2.A — live** |
+| **trace-eval scorecard adapter** | ✅ **Phase 2.A — live** (with documented recall limit) |
+| CLI auto-detection of input format | ✅ Live |
+| `fix` / `verify` / `undo` | ❌ Stubs — awaiting security review (Phase 2.B) |
+| First capability module (e.g. `vercel_cli`) | ❌ Phase 2.C |
+| MCP server | ❌ Phase 2.D |

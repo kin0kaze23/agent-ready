@@ -1,15 +1,19 @@
-"""Map a trace-eval diagnose.json payload to a Plan.
+"""Map error signals to a capability remediation Plan.
 
-This is the one piece of agent-ready that runs today. It is read-only: it reads
-JSON in, emits a Plan object. No shell commands, no network, no installers.
+Read-only: JSON / text in, Plan out. No shell commands, no network, no installers.
+Adapters (agent_ready.adapters.*) feed into `plan_from_pattern_hits` — the single
+capability-resolution path shared across every input surface.
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from agent_ready.models import Capability, Plan, PlanStep
 from agent_ready.registry import by_error_pattern, by_id, load_registry
+
+if TYPE_CHECKING:
+    from agent_ready.adapters.patterns import PatternHit
 
 
 def _steps_for_capability(cap: Capability) -> list[PlanStep]:
@@ -107,6 +111,37 @@ def plan_from_diagnose(diagnose: dict[str, Any]) -> Plan:
         steps.extend(_steps_for_capability(cap))
 
     return Plan(capabilities=capabilities, steps=steps, source_diagnose=diagnose)
+
+
+def plan_from_pattern_hits(hits: list[PatternHit]) -> Plan:
+    """Single resolution path: pattern hits → capabilities → Plan.
+
+    Every adapter (text, trace_eval, synthetic diagnose) funnels into here so
+    capability-resolution logic stays in one place.
+    """
+
+    seen_cap_ids: list[str] = []
+    capabilities: list[Capability] = []
+
+    for hit in hits:
+        cap_id = hit.pattern.maps_to_capability
+        if cap_id:
+            cap = by_id(cap_id)
+            if cap and cap.id not in seen_cap_ids:
+                capabilities.append(cap)
+                seen_cap_ids.append(cap.id)
+            continue
+        # Fallback: pattern owners from registry.
+        for cap in by_error_pattern(hit.pattern.id):
+            if cap.id not in seen_cap_ids:
+                capabilities.append(cap)
+                seen_cap_ids.append(cap.id)
+
+    steps: list[PlanStep] = []
+    for cap in capabilities:
+        steps.extend(_steps_for_capability(cap))
+
+    return Plan(capabilities=capabilities, steps=steps, source_diagnose=None)
 
 
 def plan_from_task(task_phrase: str) -> Plan:

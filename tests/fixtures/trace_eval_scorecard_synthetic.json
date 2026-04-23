@@ -1,0 +1,31 @@
+{
+  "total_score": 35.0,
+  "dimension_scores": {
+    "reliability": 10.0,
+    "efficiency": 50.0,
+    "retrieval": null,
+    "tool_discipline": 60.0,
+    "context": null
+  },
+  "dimension_confidence": {"reliability": "high", "efficiency": "high", "retrieval": "low", "tool_discipline": "high", "context": "low"},
+  "friction_flags": [
+    {
+      "id": "reliability_errors",
+      "severity": "high",
+      "dimension": "reliability",
+      "event_index": 12,
+      "suggestion": "Multiple failures including: command not found: vercel — the deployment tool is not installed on PATH."
+    },
+    {
+      "id": "tool_discipline_retries",
+      "severity": "medium",
+      "dimension": "tool_discipline",
+      "event_index": 45,
+      "suggestion": "Retries observed after command not found: gh. User is not signed in to GitHub."
+    }
+  ],
+  "adapter_capability_report": {
+    "agent_name": "claude-code",
+    "adapter": "claude_code"
+  }
+}
