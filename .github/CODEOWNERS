@@ -1,0 +1,8 @@
+# Default owner
+*                                        @kin0kaze23
+
+# Schemas are mirrored from trace-eval — review with extra care.
+/schema/                                 @kin0kaze23
+
+# Capability installers run arbitrary commands. Always review.
+/agent_ready/capabilities/               @kin0kaze23

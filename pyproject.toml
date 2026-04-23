@@ -11,8 +11,18 @@ license = { text = "MIT" }
 requires-python = ">=3.11"
 dependencies = []
 
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
 [project.scripts]
 agent-ready = "agent_ready.cli:main"
 
+[tool.hatch.build.targets.wheel]
+packages = ["agent_ready"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

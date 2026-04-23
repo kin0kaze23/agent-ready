@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kin0kaze23/trace-eval/schema/error-patterns.v1.json",
+  "title": "Error Pattern Catalog (v1) — canonical in agent-ready",
+  "description": "Regex catalog for detecting missing-capability signals in raw agent trace text. Canonical here; trace-eval v0.5.0 does not own this catalog (it uses a different, event-based detection model). See docs/INTEGRATION.md for the Phase 2 plan to bridge both.",
+  "schema_version": "1.0.0",
+  "patterns": [
+    {
+      "id": "cmd_not_found_vercel",
+      "category": "missing_tool",
+      "regex": "(?i)(command not found:\\s*vercel|vercel:\\s*command not found)",
+      "human": "The deployment tool (Vercel) isn't installed.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.95,
+      "evidence_hint": "Look for 'command not found' containing 'vercel'."
+    },
+    {
+      "id": "cmd_not_found_gh",
+      "category": "missing_tool",
+      "regex": "(?i)(command not found:\\s*gh|gh:\\s*command not found)",
+      "human": "The GitHub tool (gh CLI) isn't installed.",
+      "maps_to_capability": "github_cli",
+      "confidence_base": 0.95,
+      "evidence_hint": "Look for 'command not found' containing 'gh' as a whole word."
+    },
+    {
+      "id": "cmd_not_found_node",
+      "category": "missing_tool",
+      "regex": "(?i)(command not found:\\s*node|node:\\s*command not found)",
+      "human": "Node.js isn't installed.",
+      "maps_to_capability": "nodejs",
+      "confidence_base": 0.98,
+      "evidence_hint": "Look for 'command not found' containing 'node'."
+    },
+    {
+      "id": "cmd_not_found_python",
+      "category": "missing_tool",
+      "regex": "(?i)(command not found:\\s*python3?|python3?:\\s*command not found)",
+      "human": "Python isn't installed.",
+      "maps_to_capability": "python",
+      "confidence_base": 0.98,
+      "evidence_hint": "Look for 'command not found' containing 'python' or 'python3'."
+    },
+    {
+      "id": "vercel_not_logged_in",
+      "category": "missing_auth",
+      "regex": "(?i)vercel.*not\\s+logged\\s+in",
+      "human": "You're not signed in to Vercel yet.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.9,
+      "evidence_hint": "Vercel output containing 'not logged in'."
+    },
+    {
+      "id": "gh_auth_required",
+      "category": "missing_auth",
+      "regex": "(?i)(gh\\s+auth|http\\s+401|could not read Username)",
+      "human": "You're not signed in to GitHub yet.",
+      "maps_to_capability": "github_cli",
+      "confidence_base": 0.85,
+      "evidence_hint": "Auth-failure messages from gh or git over HTTPS."
+    },
+    {
+      "id": "missing_api_key",
+      "category": "missing_credential",
+      "regex": "(?i)(api key not found|missing\\s+(required\\s+)?(environment\\s+)?variable|authentication failed)",
+      "human": "An API key is missing.",
+      "maps_to_capability": "api_key_config",
+      "confidence_base": 0.7,
+      "evidence_hint": "Generic — requires context to disambiguate which service."
+    },
+    {
+      "id": "module_not_found_python",
+      "category": "missing_tool",
+      "regex": "(?i)ModuleNotFoundError:\\s*No module named",
+      "human": "A Python dependency isn't installed.",
+      "maps_to_capability": "python",
+      "confidence_base": 0.9,
+      "evidence_hint": "Python import error."
+    },
+    {
+      "id": "module_not_found_node",
+      "category": "missing_tool",
+      "regex": "(?i)Cannot find module\\s+['\"]",
+      "human": "A Node dependency isn't installed.",
+      "maps_to_capability": "nodejs",
+      "confidence_base": 0.9,
+      "evidence_hint": "Node require/import error."
+    }
+  ]
+}

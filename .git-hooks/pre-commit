@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Pre-commit hook for agent-ready.
+# Install: cp .git-hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# 1. Block internal working docs.
+BANNED_PATTERNS=(
+    '^SPRINT'
+    '^NOTES'
+    '^SCRATCH'
+    '^TODO_LOCAL'
+    '^.*\.local\.md$'
+    '^WIP'
+)
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+for file in $STAGED; do
+    base=$(basename "$file")
+    for pattern in "${BANNED_PATTERNS[@]}"; do
+        if [[ "$base" =~ $pattern ]]; then
+            echo "pre-commit: refusing to commit internal working doc: $file" >&2
+            exit 1
+        fi
+    done
+done
+
+# 2. Block obvious secret shapes.
+if echo "$STAGED" | xargs -I{} git diff --cached -- {} 2>/dev/null | \
+    grep -E '(sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16})' > /dev/null; then
+    echo "pre-commit: possible secret detected (OpenAI / GitHub / AWS shape)." >&2
+    exit 1
+fi
+
+# 3. Guard the capability registry — every entry must have plain_english.
+if echo "$STAGED" | grep -q 'schema/capabilities\.v1\.json'; then
+    python3 - <<'PY' || exit 1
+import json, pathlib, sys
+reg = json.loads(pathlib.Path('schema/capabilities.v1.json').read_text())
+for cap in reg['capabilities']:
+    if not cap.get('plain_english', '').strip():
+        print(f"pre-commit: capability {cap['id']} missing plain_english", file=sys.stderr)
+        sys.exit(1)
+PY
+fi
+
+# 4. Run ruff + pytest for Python / schema changes.
+if echo "$STAGED" | grep -qE '\.py$|pyproject\.toml|schema/'; then
+    if command -v ruff > /dev/null 2>&1; then
+        ruff check . || { echo "pre-commit: ruff failed"; exit 1; }
+    fi
+    if command -v pytest > /dev/null 2>&1; then
+        pytest tests/ -q || { echo "pre-commit: pytest failed"; exit 1; }
+    fi
+fi
+
+exit 0

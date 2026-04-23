@@ -1,0 +1,29 @@
+name: Bug report
+description: Something in agent-ready doesn't work as documented.
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: What happened
+      description: One paragraph. What you ran, what you expected, what you got.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Capability involved
+      description: e.g. vercel_cli, github_cli
+  - type: textarea
+    attributes:
+      label: Redacted output
+      description: Remove paths, tokens, names.
+      render: text
+  - type: input
+    attributes:
+      label: agent-ready version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: OS
+      placeholder: "macOS 14.5"

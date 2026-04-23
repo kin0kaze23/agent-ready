@@ -1,7 +1,8 @@
 name: CI
 on: [push, pull_request]
+
 jobs:
-  test:
+  lint-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -9,4 +10,27 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -e ".[dev]"
-      - run: pytest tests/ -q
+      - name: Ruff
+        run: ruff check .
+      - name: Pytest
+        run: pytest tests/ -q
+      - name: Validate schema files
+        run: |
+          python -c "import json, pathlib; [json.loads(p.read_text()) for p in pathlib.Path('schema').glob('*.json')]"
+      - name: Schema invariants
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          # Every capability in capabilities.v1.json has a non-empty plain_english.
+          registry = json.loads(pathlib.Path('schema/capabilities.v1.json').read_text())
+          for cap in registry['capabilities']:
+              assert cap.get('plain_english', '').strip(), f"{cap['id']} missing plain_english"
+          # Error pattern IDs are unique.
+          patterns = json.loads(pathlib.Path('schema/error-patterns.v1.json').read_text())['patterns']
+          ids = [p['id'] for p in patterns]
+          assert len(ids) == len(set(ids)), "pattern IDs must be unique"
+          PY
+      - name: Build
+        run: |
+          pip install build
+          python -m build

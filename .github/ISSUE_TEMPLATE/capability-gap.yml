@@ -1,0 +1,46 @@
+name: Missing capability
+description: My agent needed a tool / account / key and agent-ready couldn't set it up.
+labels: ["capability-gap"]
+body:
+  - type: input
+    attributes:
+      label: What capability is missing
+      placeholder: "Supabase CLI"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What the agent was trying to do
+      description: One sentence, plain English.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Error from the trace (redacted)
+      description: Paste the exact line(s) that showed the gap.
+      render: text
+  - type: dropdown
+    attributes:
+      label: Category
+      options:
+        - tool
+        - account
+        - auth
+        - credential
+        - runtime
+        - mcp_server
+        - other
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Install command you think works on Mac
+      description: If you happen to know.
+      placeholder: "brew install supabase/tap/supabase"
+  - type: checkboxes
+    attributes:
+      label: Paired trace-eval pattern
+      description: Is there a matching error pattern in trace-eval's catalog?
+      options:
+        - label: Yes, pattern exists
+        - label: No — needs a new pattern in trace-eval (coordinated PR)

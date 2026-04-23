@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "score": 100,
+  "verdict": "clean",
+  "summary_human": "No blocking errors found.",
+  "errors": [],
+  "suggested_next_step": {"tool": "none", "command": "", "reason_human": "No blocking issues."},
+  "trace_metadata": {"source": "generic"}
+}

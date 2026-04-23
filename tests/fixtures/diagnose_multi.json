@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "score": 10,
+  "verdict": "blocked_by_missing_capability",
+  "summary_human": "Session blocked (10/100). The deployment tool (Vercel) isn't installed.",
+  "errors": [
+    {
+      "pattern_id": "cmd_not_found_vercel",
+      "occurrences": 1,
+      "evidence": ["command not found: vercel"],
+      "confidence": 0.95,
+      "maps_to_capability": "vercel_cli"
+    },
+    {
+      "pattern_id": "cmd_not_found_gh",
+      "occurrences": 1,
+      "evidence": ["command not found: gh"],
+      "confidence": 0.95,
+      "maps_to_capability": "github_cli"
+    },
+    {
+      "pattern_id": "module_not_found_python",
+      "occurrences": 3,
+      "evidence": ["ModuleNotFoundError: No module named 'pandas'"],
+      "confidence": 0.9,
+      "maps_to_capability": "python"
+    }
+  ],
+  "suggested_next_step": {
+    "tool": "agent-ready",
+    "command": "agent-ready detect --from -",
+    "reason_human": "Multiple blocking capabilities are missing."
+  }
+}

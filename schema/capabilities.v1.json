@@ -1,0 +1,118 @@
+{
+  "$schema_ref": "./capability.v1.json",
+  "schema_version": "1.0.0",
+  "description": "Phase 1 capability registry. Each entry conforms to capability.v1.json.",
+  "capabilities": [
+    {
+      "id": "vercel_cli",
+      "name": "Vercel CLI",
+      "plain_english": "The tool that puts your website on the internet.",
+      "category": "tool",
+      "detect": {"strategy": "command_exit_zero", "command": "vercel --version"},
+      "install": {
+        "mac": "brew install vercel-cli",
+        "linux": "npm install -g vercel",
+        "windows": "npm install -g vercel"
+      },
+      "requires_account": true,
+      "account_url": "https://vercel.com/signup",
+      "requires_auth": true,
+      "auth_command": "vercel login",
+      "requires_user_action": true,
+      "verify": {"command": "vercel whoami", "exit_code": 0},
+      "undo": {
+        "mac": "brew uninstall vercel-cli",
+        "linux": "npm uninstall -g vercel",
+        "windows": "npm uninstall -g vercel"
+      },
+      "provides": ["deploy_to_vercel", "create_preview"],
+      "related_tasks": ["deploy", "publish website", "push to production"],
+      "error_patterns": ["cmd_not_found_vercel", "vercel_not_logged_in"]
+    },
+    {
+      "id": "github_cli",
+      "name": "GitHub CLI",
+      "plain_english": "The tool that connects your code to GitHub.",
+      "category": "tool",
+      "detect": {"strategy": "command_exit_zero", "command": "gh --version"},
+      "install": {
+        "mac": "brew install gh",
+        "linux": "sudo apt install gh",
+        "windows": "winget install GitHub.cli"
+      },
+      "requires_account": true,
+      "account_url": "https://github.com/signup",
+      "requires_auth": true,
+      "auth_command": "gh auth login",
+      "requires_user_action": true,
+      "verify": {"command": "gh auth status", "exit_code": 0},
+      "undo": {
+        "mac": "brew uninstall gh",
+        "linux": "sudo apt remove gh",
+        "windows": "winget uninstall GitHub.cli"
+      },
+      "provides": ["push_to_github", "create_repository", "create_pull_request"],
+      "related_tasks": ["push to github", "create a repository", "open a pull request"],
+      "error_patterns": ["cmd_not_found_gh", "gh_auth_required"]
+    },
+    {
+      "id": "nodejs",
+      "name": "Node.js",
+      "plain_english": "The tool that runs JavaScript code on your computer.",
+      "category": "runtime",
+      "detect": {"strategy": "command_exit_zero", "command": "node --version"},
+      "install": {
+        "mac": "brew install node",
+        "linux": "sudo apt install nodejs npm",
+        "windows": "winget install OpenJS.NodeJS.LTS"
+      },
+      "requires_account": false,
+      "requires_auth": false,
+      "verify": {"command": "node --version", "exit_code": 0},
+      "undo": {
+        "mac": "brew uninstall node",
+        "linux": "sudo apt remove nodejs",
+        "windows": "winget uninstall OpenJS.NodeJS.LTS"
+      },
+      "provides": ["run_javascript", "install_npm_packages"],
+      "related_tasks": ["run the app", "install dependencies", "start the server"],
+      "error_patterns": ["cmd_not_found_node", "module_not_found_node"]
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "plain_english": "The tool that runs Python code on your computer.",
+      "category": "runtime",
+      "detect": {"strategy": "command_exit_zero", "command": "python3 --version"},
+      "install": {
+        "mac": "brew install python",
+        "linux": "sudo apt install python3 python3-pip",
+        "windows": "winget install Python.Python.3"
+      },
+      "requires_account": false,
+      "requires_auth": false,
+      "verify": {"command": "python3 --version", "exit_code": 0},
+      "undo": {
+        "mac": "brew uninstall python",
+        "linux": "sudo apt remove python3",
+        "windows": "winget uninstall Python.Python.3"
+      },
+      "provides": ["run_python", "install_python_packages"],
+      "related_tasks": ["run the script", "install requirements", "run the analysis"],
+      "error_patterns": ["cmd_not_found_python", "module_not_found_python"]
+    },
+    {
+      "id": "api_key_config",
+      "name": "API Key Configuration",
+      "plain_english": "Secret keys so your app can connect to outside services.",
+      "category": "credential",
+      "detect": {"strategy": "env_var_set", "env_var": ""},
+      "requires_account": false,
+      "requires_auth": false,
+      "requires_user_action": true,
+      "provides": ["authenticate_with_service", "access_api"],
+      "related_tasks": ["connect to service", "use the API", "authenticate"],
+      "error_patterns": ["missing_api_key"]
+    }
+  ]
+}

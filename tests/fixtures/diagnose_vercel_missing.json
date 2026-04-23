@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "score": 70,
+  "verdict": "blocked_by_missing_capability",
+  "summary_human": "Session blocked (70/100). The deployment tool (Vercel) isn't installed.",
+  "errors": [
+    {
+      "pattern_id": "cmd_not_found_vercel",
+      "occurrences": 2,
+      "evidence": ["command not found: vercel", "command not found: vercel"],
+      "confidence": 0.95,
+      "maps_to_capability": "vercel_cli"
+    }
+  ],
+  "suggested_next_step": {
+    "tool": "agent-ready",
+    "command": "agent-ready detect --from -",
+    "reason_human": "One or more blocking capabilities are missing."
+  },
+  "trace_metadata": {"source": "generic"}
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kin0kaze23/agent-ready/schema/capability.v1.json",
+  "title": "Capability Registry Entry (v1)",
+  "description": "Shape of a single entry in agent-ready's capability registry. Additive changes only within v1.",
+  "type": "object",
+  "required": ["id", "name", "plain_english", "category", "detect"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Stable identifier. Never rename — deprecate and replace."
+    },
+    "name": {"type": "string"},
+    "plain_english": {
+      "type": "string",
+      "description": "One-sentence description a non-developer can understand."
+    },
+    "category": {
+      "type": "string",
+      "enum": ["tool", "account", "auth", "credential", "runtime", "mcp_server", "other"]
+    },
+    "detect": {
+      "type": "object",
+      "required": ["strategy"],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["command_exit_zero", "file_exists", "env_var_set", "http_200", "custom"]
+        },
+        "command": {"type": "string"},
+        "path": {"type": "string"},
+        "env_var": {"type": "string"},
+        "url": {"type": "string"}
+      }
+    },
+    "install": {
+      "type": "object",
+      "description": "Per-OS install commands. The agent picks based on the user's OS.",
+      "properties": {
+        "mac": {"type": "string"},
+        "linux": {"type": "string"},
+        "windows": {"type": "string"}
+      }
+    },
+    "requires_account": {"type": "boolean", "default": false},
+    "account_url": {"type": "string"},
+    "requires_auth": {"type": "boolean", "default": false},
+    "auth_command": {"type": "string"},
+    "requires_user_action": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set true when a human must click/paste/sign up — the agent cannot automate it."
+    },
+    "verify": {
+      "type": "object",
+      "description": "How to prove the capability actually works after setup.",
+      "properties": {
+        "command": {"type": "string"},
+        "exit_code": {"type": "integer"},
+        "stdout_regex": {"type": "string"}
+      }
+    },
+    "undo": {
+      "type": "object",
+      "description": "How to reverse the install.",
+      "properties": {
+        "mac": {"type": "string"},
+        "linux": {"type": "string"},
+        "windows": {"type": "string"}
+      }
+    },
+    "provides": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Capabilities this enables, e.g. 'deploy_to_vercel'."
+    },
+    "related_tasks": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Plain-English task phrases that imply this capability."
+    },
+    "error_patterns": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Pattern IDs from schema/error-patterns.v1.json that reveal this capability is missing."
+    }
+  }
+}

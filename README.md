@@ -1,96 +1,108 @@
 # agent-ready
 
-> Detect what your AI agent is missing. Install it. Get ready.
+> Detect what your AI agent is missing. Install it. Get ready. In plain English.
 
-**Pair with:** [trace-eval](https://github.com/kin0kaze23/trace-eval) — evaluate your agent's sessions.
+**Pairs with:** [trace-eval](https://github.com/kin0kaze23/trace-eval) — `trace-eval` finds the gap, `agent-ready` fixes it.
 
 ---
 
 ## What It Does
 
-When your AI agent can't complete a task because it's missing tools, accounts, or configuration — agent-ready detects the gap, installs what's needed, and guides you through setup. All in plain English. No terminal commands required.
+Your AI agent tried to do something and couldn't — it's missing a tool, not signed into an account, or lacks an API key. `agent-ready` detects the gap, asks you once for approval, and handles the rest. You never touch a terminal.
 
 ```
-User: "Deploy my portfolio to production"
-Agent: *tries, fails* "I'm missing some tools. Let me check what you need..."
-       *runs agent-ready detect*
-       "To deploy, you need 3 things. I can set them up:
-        1. Install Vercel CLI (the deployment tool)
-        2. Create a Vercel account
-        3. Link your project
-        Want me to set everything up?"
-User: "Yes"
-       *installs, configures, verifies*
-       "All set! Deploying your site now..."
-       *succeeds*
+Agent: "I tried to deploy your site but couldn't — the deployment tool isn't
+        installed and you're not signed in. I can set both up in about 2
+        minutes. Want me to?"
+You:    "Yes"
+Agent:  *installs Vercel CLI*
+        *opens the signup page for you*
+        "I've opened Vercel in your browser. Click 'Continue with GitHub'
+        and then come back here."
+You:    *signs up*
+Agent:  *links the project* "All set. Deploying now..."
+        "Live at sarah.vercel.app."
 ```
 
----
-
-## How It Works with trace-eval
-
-| Tool | Purpose | When |
-|------|---------|------|
-| **trace-eval** | Diagnose what went wrong | After an agent session |
-| **agent-ready** | Fix what's missing | Before or during a task |
-
-The complete loop:
-1. Agent tries a task → fails
-2. `trace-eval --json` → detects error patterns
-3. `agent-ready detect` → maps errors to missing capabilities
-4. User approves setup → `agent-ready fix` → installs, configures, verifies
-5. Agent retries → succeeds
-6. `trace-eval --json` → confirms improvement
+That's the entire product. The agent carries the weight; you make decisions.
 
 ---
 
-## Target Users
+## Who It's For
 
-**Primary:** Non-developers who use AI agents (Claude Code, Codex, Gemini, Cursor, OpenClaw, etc.) but don't know terminal commands, package managers, or how to set up development tools.
+**Primary:** Non-developers using Claude Code, Cursor, Codex, Gemini, OpenClaw — anyone whose AI agent keeps hitting "missing thing" walls.
 
-**Secondary:** Developers who want a quick way to detect and fix missing capabilities across their agent workflows.
-
----
-
-## Status
-
-**Pre-alpha — scaffold only.** Phase 1 will be built based on real data from trace-eval alpha users.
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design.
-See [DESIGN.md](DESIGN.md) for the non-dev UX design.
-See [CAPABILITY_REGISTRY.md](CAPABILITY_REGISTRY.md) for the capability data structure.
+**Secondary:** Developers who want a single, auditable layer between their agents and the OS.
 
 ---
 
-## Roadmap
+## The Loop (with trace-eval)
 
-| Phase | What | Trigger |
-|-------|------|---------|
-| **0 (now)** | Scaffold + design docs | — |
-| **1** | Error-to-capability mapping + 3-5 capability setup flows | After trace-eval alpha data |
-| **2** | Full setup orchestrator + verification layer | After Phase 1 validation |
-| **3** | Agent protocol self-upgrade + task intent detection | After Phase 2 validation |
+```
+  Agent tries a task → fails
+        │
+        ▼
+  ┌────────────────┐   diagnose.json   ┌──────────────────┐
+  │   trace-eval   │ ─────────────────▶│   agent-ready    │
+  │   diagnose     │                   │   detect + fix   │
+  └────────────────┘                   └────────┬─────────┘
+                                                │
+                                                ▼
+                                      User approves each step
+                                      → install → account → auth → verify
+                                                │
+                                                ▼
+                                      Agent retries → trace-eval confirms
+                                      score improvement
+```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full picture and [docs/DESIGN.md](docs/DESIGN.md) for the non-dev UX principles.
 
 ---
 
-## For AI Agents Working on This Repo
+## Status: **Phase 1 read-only path — live**
 
-When implementing agent-ready:
+`detect` is implemented end-to-end: it reads trace-eval `diagnose.json` (or a plain-English task phrase) and returns a capability Plan. 28 tests pass, ruff clean. `fix` / `verify` / `undo` are intentionally stubbed pending the security review of the install path — see `docs/ARCHITECTURE.md § Safety`.
 
-1. **Read ARCHITECTURE.md first** — understand how trace-eval and agent-ready work together
-2. **Read DESIGN.md** — understand the non-dev UX principles
-3. **Read CAPABILITY_REGISTRY.md** — understand the data structure
-4. **Start with detection** — build `agent-ready detect` before `agent-ready fix`
-5. **Implement one capability end-to-end** — Vercel CLI is the best starting point
-6. **Test with real traces** — use trace-eval example traces to test the error mapper
-7. **Design for the agent, not the terminal** — the primary interface is JSON for AI agents
+Try it:
 
-**Never commit:** internal working documents, build artifacts, or credentials.
-**Always ask before installing** — safe defaults, user approval required.
-**Verify after setup** — never assume installation worked.
+```bash
+agent-ready detect --task "deploy my portfolio"
+agent-ready status
+```
+
+> **Heads-up:** the real `trace-eval` (v0.5.0) emits a richer JSON shape than our mapper reads today. Piping `trace-eval run ... --format json | agent-ready detect` requires a thin adapter that's the **Phase 2.A task** — see [docs/INTEGRATION.md](docs/INTEGRATION.md). Until that lands, use `--task` mode or the synthetic fixtures under `tests/fixtures/`.
+
+See [docs/EXAMPLES.md](docs/EXAMPLES.md) for the full usage flow and [docs/CAPABILITY_REGISTRY.md](docs/CAPABILITY_REGISTRY.md) for the 5 Phase 1 capabilities.
+
+---
+
+## Agent-Facing Surface
+
+Two users, two surfaces:
+
+| User | Interface | Contract |
+|------|-----------|----------|
+| The AI agent | `agent-ready detect --from diagnose.json` (and future MCP server) | `schema/trace.v1.json` (input), `schema/capability.v1.json` (output) |
+| The human | Approval prompts, plain-English progress, one-line success/failure | English |
+
+See [docs/AGENT_INTERFACE.md](docs/AGENT_INTERFACE.md).
+
+---
+
+## Safety Posture
+
+`agent-ready fix` installs software and writes configuration. It is a HIGH-RISK tool by design.
+
+- **Never installs without approval** — one approval per capability, not one blanket yes.
+- **Never stores credentials** — secrets go to the user's keychain / `.env` / the tool's native store.
+- **Every action is reversible** — `agent-ready undo <capability>` removes what was installed.
+- **Verify after install** — never report success based on a return code alone.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#safety-verification-layer).
 
 ---
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
