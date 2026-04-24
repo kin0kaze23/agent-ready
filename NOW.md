@@ -4,7 +4,8 @@
 
 ## Status
 
-**Phase 2.A complete.** 41 tests pass, ruff clean, v0.2.0. CLI auto-detects input format across raw text, trace-eval scorecard JSON, synthetic diagnose, and task phrases.
+**Phase 2.B in review.** Security review PR (#3) is open against `main`. Phase 2.C unblocked after merge.
+41 tests pass, ruff clean, v0.2.0. CLI auto-detects input format across raw text, trace-eval scorecard JSON, synthetic diagnose, and task phrases.
 
 ## What Works Today (Phase 1 + 2.A)
 
@@ -18,15 +19,15 @@
 
 ## What Does NOT Work Yet
 
-- ❌ `fix` / `verify` / `undo` — pending Phase 2.B security review.
-- ❌ First capability module (real installer code) — Phase 2.C.
+- ⏳ `fix` / `verify` / `undo` — security review drafted (PR #3), awaiting owner approval and merge.
+- ❌ First capability module (real installer code) — Phase 2.C (unblocked after PR #3 merges).
 - ❌ MCP server — Phase 2.D.
 - ❌ `trace-eval`-side integration (`install_capability` action type) — optional future work, see `docs/INTEGRATION.md`.
 
 ## Immediate Next Steps (in order, for the next agent)
 
-1. **Phase 2.B — Security review** of the install path. Draft the review doc at `docs/SECURITY_REVIEW.md` answering: sandboxing model, credential storage, sudo policy, rollback guarantees, interruption handling. Required before any `fix` code lands.
-2. **Phase 2.C — First capability module** — `agent_ready/capabilities/vercel_cli.py`. Implement `detect`, `install`, `auth`, `verify`, `undo` as pure functions. Add tests against a disposable environment. One capability fully working is worth more than five half-working.
+1. **Merge PR #3** — owner approval needed for `docs/SECURITY_REVIEW.md`.
+2. **Phase 2.C — First capability module** — `agent_ready/capabilities/vercel_cli.py`. Implement `detect`, `install`, `auth`, `verify`, `undo` following the security decisions in `docs/SECURITY_REVIEW.md`. Add tests against a disposable environment. One capability fully working is worth more than five half-working.
 3. **Phase 2.D — MCP server** — wrap `detect` (and later `fix`) as MCP tools. Interface spec in `docs/AGENT_INTERFACE.md`.
 
 ## For Other AI Agents Picking This Up
@@ -38,9 +39,12 @@ Start here:
 - `docs/DESIGN.md` — non-dev UX principles (read before changing any user-facing text).
 - `CONTRIBUTING.md` — safety-review block is mandatory for installer PRs.
 
-## Open Design Questions (for Phase 2.B/C discussions)
+## Resolved Design Questions (via Phase 2.B Security Review)
 
-- **Sandboxing model for `fix`**: subshell, container, or trust the user's environment?
-- **User-action unblock signal**: stdin line vs. sentinel file (for async agents)?
-- **Credential storage**: OS keychain, `.env`, or delegate to each tool's native store?
-- **Approval cadence**: per-capability vs. per-session vs. per-step?
+- **Sandboxing model for `fix`**: controlled subshell on the user's host. (See `docs/SECURITY_REVIEW.md` § 1)
+- **Credential storage**: delegate to each tool's native store; agent-ready never touches credentials. (See `docs/SECURITY_REVIEW.md` § 2)
+- **Approval cadence**: per-capability (one yes = all steps for that capability only). (See `docs/SECURITY_REVIEW.md` § 6)
+
+## Still Open
+
+- **User-action unblock signal**: stdin line vs. sentinel file (for async agents)? — deferred to Phase 2.C implementation.
