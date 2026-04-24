@@ -59,4 +59,4 @@ def test_autodetect_unrecognized_json_falls_back_to_text():
 def test_autodetect_clean_text_returns_empty_plan():
     r = _run(["detect"], stdin="all good here, no errors\n")
     assert r.returncode == 0
-    assert "nothing to do" in r.stdout.lower()
+    assert "nothing to set up" in r.stdout.lower()

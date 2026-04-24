@@ -28,7 +28,7 @@ def test_help_runs():
 def test_detect_from_file_prints_plan():
     r = _run(["detect", "--from", str(FIXTURES / "diagnose_vercel_missing.json")])
     assert r.returncode == 1  # non-zero — there's something to fix
-    assert "Vercel CLI" in r.stdout
+    assert "website on the internet" in r.stdout
 
 
 def test_detect_from_stdin():
@@ -42,20 +42,20 @@ def test_detect_from_stdin():
 def test_detect_from_task_phrase():
     r = _run(["detect", "--task", "deploy the portfolio"])
     assert r.returncode == 1
-    assert "Vercel" in r.stdout
+    assert "website on the internet" in r.stdout
 
 
 def test_detect_clean_diagnose_returns_zero():
     r = _run(["detect", "--from", str(FIXTURES / "diagnose_clean.json")])
     assert r.returncode == 0
-    assert "nothing to do" in r.stdout.lower()
+    assert "nothing to set up" in r.stdout.lower()
 
 
 def test_status_lists_registry():
     r = _run(["status"])
     assert r.returncode == 0
-    assert "vercel_cli" in r.stdout
-    assert "github_cli" in r.stdout
+    assert "website on the internet" in r.stdout
+    assert "connects your code to GitHub" in r.stdout
 
 
 def test_schema_prints_paths():
@@ -67,16 +67,16 @@ def test_schema_prints_paths():
 def test_fix_requires_task_or_from():
     r = _run(["fix"])
     assert r.returncode == 1
-    assert "specify --task or --from" in r.stderr
+    assert "deploy my portfolio" in r.stderr
 
 
 def test_verify_requires_capability_arg():
     r = _run(["verify"])
     assert r.returncode == 1
-    assert "specify a capability ID" in r.stderr
+    assert "Which tool" in r.stderr
 
 
 def test_undo_requires_capability_arg():
     r = _run(["undo"])
     assert r.returncode == 1
-    assert "specify a capability ID" in r.stderr
+    assert "Which tool" in r.stderr

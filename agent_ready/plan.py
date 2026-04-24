@@ -9,22 +9,25 @@ from agent_ready.models import Plan
 
 def render_human(plan: Plan) -> str:
     if not plan.capabilities:
-        return "agent-ready • nothing to do — no missing capabilities detected."
+        return "Everything looks good — nothing to set up."
 
     header_count = len(plan.capabilities)
     noun = "thing" if header_count == 1 else "things"
     lines = [
-        f"agent-ready • {header_count} {noun} to set up:",
+        f"I found {header_count} {noun} to set up:",
     ]
     for cap in plan.capabilities:
-        lines.append(f"  • {cap.name} — {cap.plain_english}")
+        lines.append(f"  • {cap.plain_english}")
 
     if plan.requires_user_action:
         lines.append("")
-        lines.append("Some steps need your input (account signup, sign-in, or an API key).")
+        lines.append(
+            "A few steps need your help (like signing up or signing in). "
+            "I'll guide you through each one."
+        )
 
     lines.append("")
-    lines.append("Next: review with `agent-ready fix --dry-run` before anything is installed.")
+    lines.append('Run `agent-ready fix --task "..."` to set everything up.')
     return "\n".join(lines)
 
 

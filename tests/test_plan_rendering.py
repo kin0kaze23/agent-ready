@@ -19,13 +19,13 @@ def test_human_output_lists_every_capability():
     plan = _plan("diagnose_multi.json")
     rendered = render_human(plan)
     for cap in plan.capabilities:
-        assert cap.name in rendered
+        assert cap.plain_english in rendered
 
 
 def test_human_output_empty_plan_is_reassuring():
     plan = _plan("diagnose_clean.json")
     rendered = render_human(plan)
-    assert "nothing to do" in rendered.lower()
+    assert "nothing to set up" in rendered.lower()
 
 
 def test_machine_output_is_json_serializable():
