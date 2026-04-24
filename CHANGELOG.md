@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.0 (2026-04-24)
+
+### Added
+
+- **Phase 2.B — Security review** (`docs/SECURITY_REVIEW.md`) — 7 questions answered with implementation sketches: sandboxing model, credential storage, sudo policy, rollback, interruption, approval cadence, network install risks.
+- **Phase 2.C — First capability module** (`agent_ready/capabilities/vercel_cli.py`) — `detect`, `install`, `auth`, `verify`, `undo` for the Vercel deployment tool.
+- **Sandbox runner** (`agent_ready/sandbox.py`) — controlled subprocess execution: restricted environment, timeout, sudo blocking, captured output.
+- **Executor** (`agent_ready/executor.py`) — orchestrates per-capability approval, step sequencing (install → account → auth → verify), and undo with removal verification.
+- **CLI `fix` command** — `agent-ready fix --task "deploy my site"` installs and configures missing capabilities. Supports `--dry-run` to preview.
+- **CLI `verify` command** — `agent-ready verify vercel_cli` checks a capability is actually working.
+- **CLI `undo` command** — `agent-ready undo vercel_cli` removes what was installed and confirms removal.
+- **SECURITY.md** — GitHub-standard security policy for a tool that installs software.
+- **Documentation refresh** — README with Installation, Quick Start, status table, and CI badges. ROADMAP.md updated to reflect completed phases.
+- 14 new tests covering capability lifecycle functions. 55 total tests passing.
+
+### Changed
+
+- `fix` / `verify` / `undo` are no longer stubs — fully implemented with per-capability approval.
+- Version bumped to 0.3.0 (`pyproject.toml` and `__init__.py`).
+
 ## 0.2.0 (2026-04-23)
 
 ### Added

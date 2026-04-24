@@ -1,8 +1,7 @@
 """CLI for agent-ready.
 
-`detect` is implemented — auto-detects text / trace-eval scorecard / synthetic diagnose.
-`fix` / `verify` / `undo` print a "pending security review" message (exit 2) —
-intentional, do not wire them to installers without review.
+`detect` is live — auto-detects text / trace-eval scorecard / synthetic diagnose.
+`fix` / `verify` / `undo` are implemented — gated by per-capability approval.
 """
 
 from __future__ import annotations
@@ -20,6 +19,7 @@ from agent_ready.adapters import (
 )
 from agent_ready.mapper import plan_from_diagnose, plan_from_task
 from agent_ready.plan import render_human, render_machine
+from agent_ready.registry import by_id
 
 
 def _read_source(source: str | None) -> str:
@@ -81,18 +81,63 @@ def _cmd_status(_: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_not_implemented(cmd: str):
-    def inner(_: argparse.Namespace) -> int:
-        print(f"agent-ready {cmd}: pending security review.", file=sys.stderr)
-        print(
-            "  This command runs installers and mutates the user's system. "
-            "It is intentionally stubbed until the install path is reviewed. "
-            "See docs/ARCHITECTURE.md § Safety.",
-            file=sys.stderr,
-        )
-        return 2
+def _cmd_fix(args: argparse.Namespace) -> int:
+    from agent_ready.executor import execute_plan
 
-    return inner
+    if args.task:
+        plan = plan_from_task(args.task)
+    elif args.source:
+        raw = _read_source(args.source)
+        plan = _detect_and_plan(raw)
+    else:
+        print("agent-ready fix: specify --task or --from <file>.", file=sys.stderr)
+        return 1
+
+    if not plan.capabilities:
+        print("Nothing to set up.")
+        return 0
+
+    if args.dry_run:
+        print("agent-ready (dry-run) — this is what I would do:\n")
+        print(render_human(plan))
+        return 0
+
+    succeeded = execute_plan(plan, interactive=not args.non_interactive)
+    return 0 if succeeded else 1
+
+
+def _cmd_verify(args: argparse.Namespace) -> int:
+    from agent_ready.executor import verify_capability
+
+    if not args.capability:
+        print("agent-ready verify: specify a capability ID.", file=sys.stderr)
+        print("  e.g. agent-ready verify vercel_cli", file=sys.stderr)
+        return 1
+
+    cap = by_id(args.capability)
+    if not cap:
+        print(f"agent-ready verify: unknown capability '{args.capability}'.", file=sys.stderr)
+        return 1
+
+    ok = verify_capability(cap)
+    return 0 if ok else 1
+
+
+def _cmd_undo(args: argparse.Namespace) -> int:
+    from agent_ready.executor import undo_capability
+
+    if not args.capability:
+        print("agent-ready undo: specify a capability ID.", file=sys.stderr)
+        print("  e.g. agent-ready undo vercel_cli", file=sys.stderr)
+        return 1
+
+    cap = by_id(args.capability)
+    if not cap:
+        print(f"agent-ready undo: unknown capability '{args.capability}'.", file=sys.stderr)
+        return 1
+
+    ok = undo_capability(cap)
+    return 0 if ok else 1
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -117,18 +162,26 @@ def _build_parser() -> argparse.ArgumentParser:
     detect_p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     detect_p.set_defaults(func=_cmd_detect)
 
-    fix_p = sub.add_parser("fix", help="(pending security review) Install and configure")
-    fix_p.add_argument("--plan")
-    fix_p.add_argument("--dry-run", action="store_true")
-    fix_p.set_defaults(func=_cmd_not_implemented("fix"))
+    fix_p = sub.add_parser("fix", help="Install and configure missing capabilities")
+    fix_p.add_argument(
+        "--from", dest="source", help="Path to trace / scorecard / log (default: stdin)"
+    )
+    fix_p.add_argument("--task", help="Plain-English task, e.g. 'deploy my site'")
+    fix_p.add_argument(
+        "--dry-run", action="store_true", help="Show the plan without running anything"
+    )
+    fix_p.add_argument(
+        "--non-interactive", action="store_true", help="Skip user prompts (for scripting)"
+    )
+    fix_p.set_defaults(func=_cmd_fix)
 
-    verify_p = sub.add_parser("verify", help="(pending security review) Verify a capability")
-    verify_p.add_argument("capability", nargs="?")
-    verify_p.set_defaults(func=_cmd_not_implemented("verify"))
+    verify_p = sub.add_parser("verify", help="Verify a capability is working")
+    verify_p.add_argument("capability", nargs="?", help="Capability ID, e.g. vercel_cli")
+    verify_p.set_defaults(func=_cmd_verify)
 
-    undo_p = sub.add_parser("undo", help="(pending security review) Reverse an install")
-    undo_p.add_argument("capability", nargs="?")
-    undo_p.set_defaults(func=_cmd_not_implemented("undo"))
+    undo_p = sub.add_parser("undo", help="Remove what was installed")
+    undo_p.add_argument("capability", nargs="?", help="Capability ID, e.g. vercel_cli")
+    undo_p.set_defaults(func=_cmd_undo)
 
     status_p = sub.add_parser("status", help="List capabilities the registry knows about")
     status_p.set_defaults(func=_cmd_status)
