@@ -4,7 +4,7 @@
 
 ## Status
 
-**v0.3.0 — Phase 2.C complete.** 55 tests pass, ruff clean. `fix` / `verify` / `undo` are live.
+**v0.3.0 — Phase 2.C complete + UX overhaul.** 55 tests pass, ruff clean. `fix` / `verify` / `undo` are live. All user-facing output rewritten in plain English — no technical jargon anywhere.
 
 CLI auto-detects input format across raw text, trace-eval scorecard JSON, synthetic diagnose, and task phrases. The Vercel deployment tool can now be installed, configured, verified, and removed end-to-end.
 
@@ -28,9 +28,9 @@ CLI auto-detects input format across raw text, trace-eval scorecard JSON, synthe
 
 ## Immediate Next Steps (in order)
 
-1. **Phase 2.C — Second capability module** — `github_cli` or `nodejs`. Same lifecycle: detect → install → auth → verify → undo. One more capability proves the pattern scales.
-2. **Phase 2.D — MCP server** — wrap `detect`, `fix`, `verify`, `undo` as MCP tools for Claude Code, Cursor, Codex. Interface spec in `docs/AGENT_INTERFACE.md`.
-3. **Error pattern expansion** — add Windows PowerShell, zsh, permission denied, network timeout variants.
+1. **Add more capabilities** — `github_cli` is the highest-impact next capability. It's commonly needed (agents push code, create repos, open PRs) and has a clean install path. Then `nodejs` and `python`.
+2. **Expand error patterns** — current 9 patterns only match English "command not found". Adding Windows PowerShell, zsh, and permission-denied variants makes detect accurate for far more users.
+3. **Phase 2.D — MCP server** — wrap `detect`, `fix`, `verify`, `undo` as MCP tools so AI agents can call them natively without CLI parsing.
 
 ## For Other AI Agents Picking This Up
 
