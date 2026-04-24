@@ -64,17 +64,19 @@ def test_schema_prints_paths():
     assert "capability.v1.json" in r.stdout
 
 
-def test_fix_is_stubbed_with_security_message():
+def test_fix_requires_task_or_from():
     r = _run(["fix"])
-    assert r.returncode == 2
-    assert "security review" in r.stderr.lower()
+    assert r.returncode == 1
+    assert "specify --task or --from" in r.stderr
 
 
-def test_verify_is_stubbed():
+def test_verify_requires_capability_arg():
     r = _run(["verify"])
-    assert r.returncode == 2
+    assert r.returncode == 1
+    assert "specify a capability ID" in r.stderr
 
 
-def test_undo_is_stubbed():
+def test_undo_requires_capability_arg():
     r = _run(["undo"])
-    assert r.returncode == 2
+    assert r.returncode == 1
+    assert "specify a capability ID" in r.stderr

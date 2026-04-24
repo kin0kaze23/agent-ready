@@ -1,13 +1,13 @@
 """agent-ready: Detect what your AI agent is missing. Install it. Get ready.
 
-Phase 1 status:
+Phase 2.C status:
   * `detect` is live — text / trace-eval scorecard / synthetic diagnose / task phrase.
-  * `fix`, `verify`, `undo` are stubs — require security review before they land.
+  * `fix` / `verify` / `undo` are live — per-capability approval, sandboxed execution.
 """
 
 from __future__ import annotations
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from agent_ready.adapters import (
     is_trace_eval_scorecard,
@@ -15,6 +15,7 @@ from agent_ready.adapters import (
     plan_from_trace_eval_json,
     scan_text,
 )
+from agent_ready.executor import execute_plan, undo_capability, verify_capability
 from agent_ready.mapper import (
     plan_from_diagnose,
     plan_from_pattern_hits,
@@ -31,6 +32,7 @@ __all__ = [
     "PlanStep",
     "by_error_pattern",
     "by_id",
+    "execute_plan",
     "is_trace_eval_scorecard",
     "load_registry",
     "plan_from_diagnose",
@@ -41,4 +43,6 @@ __all__ = [
     "render_human",
     "render_machine",
     "scan_text",
+    "undo_capability",
+    "verify_capability",
 ]
