@@ -2,6 +2,10 @@
 
 > Detect what your AI agent is missing. Install it. Get ready. In plain English.
 
+[![CI](https://github.com/kin0kaze23/agent-ready/actions/workflows/ci.yml/badge.svg)](https://github.com/kin0kaze23/agent-ready/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+
 **Pairs with:** [trace-eval](https://github.com/kin0kaze23/trace-eval) — `trace-eval` finds the gap, `agent-ready` fixes it.
 
 ---
@@ -30,9 +34,78 @@ That's the entire product. The agent carries the weight; you make decisions.
 
 ## Who It's For
 
-**Primary:** Non-developers using Claude Code, Cursor, Codex, Gemini, OpenClaw — anyone whose AI agent keeps hitting "missing thing" walls.
+**Primary:** Non-developers using Claude Code, Cursor, Codex, Gemini — anyone whose AI agent keeps hitting "missing thing" walls.
 
 **Secondary:** Developers who want a single, auditable layer between their agents and the OS.
+
+---
+
+## Installation
+
+```bash
+pip install agent-ready
+```
+
+Or from source:
+
+```bash
+git clone https://github.com/kin0kaze23/agent-ready.git
+cd agent-ready
+pip install -e ".[dev]"
+```
+
+Verify it works:
+
+```bash
+agent-ready status
+# agent-ready 0.2.0 — 5 capabilities in registry:
+#   • vercel_cli           Vercel CLI
+#   • github_cli           GitHub CLI
+#   • nodejs               Node.js
+#   • python               Python
+#   • api_key_config       API Key Configuration
+```
+
+---
+
+## Quick Start
+
+### 1. Detect from a plain-English task (no trace needed)
+
+```bash
+agent-ready detect --task "deploy my portfolio to production"
+```
+
+```
+agent-ready • 1 thing to set up:
+  • Vercel CLI — The tool that puts your website on the internet.
+
+Some steps need your input (account signup, sign-in, or an API key).
+
+Next: review with `agent-ready fix --dry-run` before anything is installed.
+```
+
+### 2. Detect from a real agent session log
+
+```bash
+cat session.log | agent-ready detect
+```
+
+Scans the raw text against known error patterns and maps them to missing capabilities. Works with any agent that outputs readable error text.
+
+### 3. Detect from trace-eval output
+
+```bash
+trace-eval run session.jsonl --format json | agent-ready detect
+```
+
+### 4. Machine-readable output (for AI agents)
+
+```bash
+cat session.log | agent-ready detect --json
+```
+
+See [docs/EXAMPLES.md](docs/EXAMPLES.md) for the full usage guide and [docs/AGENT_INTERFACE.md](docs/AGENT_INTERFACE.md) for how AI agents drive agent-ready.
 
 ---
 
@@ -56,37 +129,25 @@ That's the entire product. The agent carries the weight; you make decisions.
                                       score improvement
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full picture and [docs/DESIGN.md](docs/DESIGN.md) for the non-dev UX principles.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full system design and [docs/DESIGN.md](docs/DESIGN.md) for the non-dev UX principles.
 
 ---
 
-## Status: **Phase 1 read-only path — live**
+## Current Status
 
-`detect` is implemented end-to-end: it reads trace-eval `diagnose.json` (or a plain-English task phrase) and returns a capability Plan. 28 tests pass, ruff clean. `fix` / `verify` / `undo` are intentionally stubbed pending the security review of the install path — see `docs/ARCHITECTURE.md § Safety`.
+**v0.2.0 — Phase 1 + Phase 2.A complete.** 41 tests passing, CI green.
 
-Try it:
-
-```bash
-agent-ready detect --task "deploy my portfolio"
-agent-ready status
-```
-
-> **Heads-up:** the real `trace-eval` (v0.5.0) emits a richer JSON shape than our mapper reads today. Piping `trace-eval run ... --format json | agent-ready detect` requires a thin adapter that's the **Phase 2.A task** — see [docs/INTEGRATION.md](docs/INTEGRATION.md). Until that lands, use `--task` mode or the synthetic fixtures under `tests/fixtures/`.
-
-See [docs/EXAMPLES.md](docs/EXAMPLES.md) for the full usage flow and [docs/CAPABILITY_REGISTRY.md](docs/CAPABILITY_REGISTRY.md) for the 5 Phase 1 capabilities.
-
----
-
-## Agent-Facing Surface
-
-Two users, two surfaces:
-
-| User | Interface | Contract |
-|------|-----------|----------|
-| The AI agent | `agent-ready detect --from diagnose.json` (and future MCP server) | `schema/trace.v1.json` (input), `schema/capability.v1.json` (output) |
-| The human | Approval prompts, plain-English progress, one-line success/failure | English |
-
-See [docs/AGENT_INTERFACE.md](docs/AGENT_INTERFACE.md).
+| Feature | Status |
+|---------|--------|
+| Capability registry (5 capabilities) | ✅ Live |
+| Error pattern detection (9 patterns) | ✅ Live |
+| `detect` from task phrase | ✅ Live |
+| `detect` from raw trace text | ✅ Live |
+| `detect` from trace-eval scorecard | ✅ Live (see [known limits](docs/INTEGRATION.md#known-limits--real-scorecard-precision)) |
+| `detect` from synthetic diagnose | ✅ Live |
+| `fix` / `verify` / `undo` | 🟡 Security review in progress (PR #3) |
+| Real capability installers | 🔒 Blocked on security review merge |
+| MCP server | 🔒 Phase 2.D (after installers ship) |
 
 ---
 
@@ -99,7 +160,33 @@ See [docs/AGENT_INTERFACE.md](docs/AGENT_INTERFACE.md).
 - **Every action is reversible** — `agent-ready undo <capability>` removes what was installed.
 - **Verify after install** — never report success based on a return code alone.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#safety-verification-layer).
+See [SECURITY.md](SECURITY.md) for our full security policy and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the verification layer design.
+
+---
+
+## Contributing
+
+We welcome contributions! Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Every capability-adding PR requires a safety review — see the template.
+
+### Adding a capability
+
+1. Open a [capability-gap issue](https://github.com/kin0kaze23/agent-ready/issues/new?template=capability-gap.yml).
+2. Add the capability entry to `schema/capabilities.v1.json`.
+3. Add matching error patterns to `schema/error-patterns.v1.json`.
+4. Write tests, run `pytest tests/ -q` and `ruff check .`.
+5. Open a PR with the required `## Safety review` block.
+
+See [docs/EXAMPLES.md § Extending the registry](docs/EXAMPLES.md#7-extending-the-registry-for-contributors--ai-agents) for the full walkthrough.
+
+---
+
+## Roadmap
+
+Source of truth: [docs/ROADMAP.md](docs/ROADMAP.md). High-level priorities:
+
+- **Phase 2.C** — Real installers (starting with `vercel_cli`): detect → install → auth → verify → undo.
+- **Phase 2.D** — MCP server so AI agents can call agent-ready as native tools.
+- **Phase 2.B+** — More capabilities, more error patterns, broader OS support.
 
 ---
 
