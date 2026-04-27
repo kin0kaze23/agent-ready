@@ -2,45 +2,52 @@
 
 > Current focused work. Provides immediate context for the next agent picking up this repo.
 
+## Strategic Context
+
+This repo is one engine in the **AI Workstation Suite** (Pulse · trace-eval · agent-ready). The suite-level strategy lives at `/Users/jonathannugroho/Developer/PersonalProjects/AI_WORKSTATION_SUITE.md`.
+
+**agent-ready's role:** the capability layer — detect missing tools/keys/skills, install them with per-action approval, verify they work, and undo cleanly. The long-term moat is the community capability manifest (§6 of the strategy doc).
+
 ## Status
 
-**v0.3.0 — Phase 2.C complete + UX overhaul.** 55 tests pass, ruff clean. `fix` / `verify` / `undo` are live. All user-facing output rewritten in plain English — no technical jargon anywhere.
+**v0.3.0 — Phase 2.C + 2.D complete.** 67 tests pass, ruff clean. MCP server live.
 
-CLI auto-detects input format across raw text, trace-eval scorecard JSON, synthetic diagnose, and task phrases. The Vercel deployment tool can now be installed, configured, verified, and removed end-to-end.
+AI agents can now call agent-ready natively via MCP (`vibedev.ready.detect`, `fix`, `verify`, `undo`, `status`). The CLI remains available for humans who want to type commands.
 
-## What Works Today (Phase 1 + 2.A + 2.C)
+## What Works Today
 
-- `agent-ready detect --task "deploy my site"` — intent-based, no trace needed.
-- `cat session.jsonl | agent-ready detect` — raw trace text, highest recall path.
-- `trace-eval run ... --format json | agent-ready detect` — trace-eval scorecard (lower recall — see `docs/INTEGRATION.md § Known Limits`).
-- `agent-ready fix --task "deploy my site"` — installs and configures missing capabilities with per-capability approval.
-- `agent-ready fix --dry-run --task "deploy my site"` — previews what would happen.
-- `agent-ready verify vercel_cli` — checks a capability is actually working.
-- `agent-ready undo vercel_cli` — removes what was installed and confirms removal.
-- `agent-ready status` / `agent_ready schema` — introspection.
-- Python API: `from agent_ready import execute_plan, verify_capability, undo_capability`.
+- **MCP Server** (primary interface): 5 tools exposed to AI agents via stdio
+- `agent-ready detect --task "deploy my site"` — intent-based, no trace needed
+- `agent-ready fix --task "deploy my site"` — installs and configures with approval
+- `agent-ready fix --dry-run --task "deploy my site"` — previews what would happen
+- `agent-ready verify vercel_cli` — checks a capability is working
+- `agent-ready undo vercel_cli` — removes what was installed and confirms removal
+- `agent-ready status` — lists all tools in the registry
+- Python API: `from agent_ready import execute_plan, verify_capability, undo_capability`
 
 ## What Does NOT Work Yet
 
-- ❌ Additional capability modules (github_cli, nodejs, python, etc.) — only `vercel_cli` is implemented.
-- ❌ MCP server — Phase 2.D.
-- ❌ `trace-eval`-side integration (`install_capability` action type) — optional future work, see `docs/INTEGRATION.md`.
+- ❌ Additional capability installers — only `vercel_cli` has real code. `github_cli`, `nodejs`, `python` are in the schema but have no Python modules.
+- ❌ Error pattern expansion — still only 9 English "command not found" patterns.
+- ❌ Shared state (`~/.config/vibedev/state.json`) and audit log.
+- ❌ Bootstrap script (`curl get.vibedev.sh | sh`).
 
-## Immediate Next Steps (in order)
+## Immediate Next Steps (per strategy doc §10)
 
-1. **Add more capabilities** — `github_cli` is the highest-impact next capability. It's commonly needed (agents push code, create repos, open PRs) and has a clean install path. Then `nodejs` and `python`.
-2. **Expand error patterns** — current 9 patterns only match English "command not found". Adding Windows PowerShell, zsh, and permission-denied variants makes detect accurate for far more users.
-3. **Phase 2.D — MCP server** — wrap `detect`, `fix`, `verify`, `undo` as MCP tools so AI agents can call them natively without CLI parsing.
+1. **Ship 3 more capability installers** — `github_cli`, `nodejs`, `python` (P0, days 0–30)
+2. **Expand error patterns** — zsh, PowerShell, permission denied, OAuth expiry (P0)
+3. **Vocabulary sweep** — replace forbidden words across CLI output (P0, half-day)
+4. **Shared state + audit log** — `~/.config/vibedev/` coordination with Pulse and trace-eval (P1)
 
 ## For Other AI Agents Picking This Up
 
 Start here:
-- `AGENT_PICKUP.md` — focused pickup guide, what to do first.
-- `docs/INTEGRATION.md` — how we relate to trace-eval v0.5.0.
-- `docs/ARCHITECTURE.md` — system design.
-- `docs/DESIGN.md` — non-dev UX principles (read before changing any user-facing text).
-- `CONTRIBUTING.md` — safety-review block is mandatory for installer PRs.
-- `docs/SECURITY_REVIEW.md` — the security policy all installers must follow.
+- `AI_WORKSTATION_SUITE.md` (parent directory) — the strategic frame
+- `AGENT_PICKUP.md` — focused pickup guide
+- `docs/ARCHITECTURE.md` — system design
+- `docs/DESIGN.md` — non-dev UX principles (read before changing any user-facing text)
+- `CONTRIBUTING.md` — safety-review block is mandatory for installer PRs
+- `docs/SECURITY_REVIEW.md` — the security policy all installers must follow
 
 ## Resolved Design Decisions (via Phase 2.B Security Review)
 
@@ -51,5 +58,5 @@ Start here:
 
 ## Still Open
 
-- **User-action unblock signal**: stdin line vs. sentinel file (for async agents)? — Phase 2.C uses `input()` for now; MCP server will need a different pattern.
+- **User-action unblock signal**: MCP server uses non-interactive mode; the human sees approval prompts through their AI agent's UI, not through agent-ready directly.
 - **Error pattern expansion**: current 9 patterns are narrow (English "command not found" only). Need Windows PowerShell, zsh, permission denied, network timeout variants.
