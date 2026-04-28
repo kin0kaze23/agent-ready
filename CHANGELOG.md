@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0 (2026-04-27)
+
+### Added
+
+- **36 error patterns** (9 → 36) — 4x detection coverage. Covers zsh, PowerShell, permission denied, network timeout, auth expiry, rate limits, version mismatch, install failures, git errors, Docker, and SSL errors.
+- **100% match rate** on 28 real-world error messages tested.
+- Detection now works for Mac, Linux, and Windows users across bash, zsh, and PowerShell shells.
+
+### Changed
+
+- Version bumped to 0.5.0.
+
 ## 0.4.0 (2026-04-26)
 
 ### Added

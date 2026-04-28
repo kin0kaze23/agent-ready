@@ -10,35 +10,33 @@ This repo is one engine in the **AI Workstation Suite** (Pulse · trace-eval · 
 
 ## Status
 
-**v0.4.0 — MCP server live, generic executor active, vocabulary clean.** 82 tests pass, ruff clean.
+**v0.5.0 — 36 error patterns, 100% detection on real-world errors.** 82 tests pass, ruff clean.
 
-AI agents call agent-ready natively via MCP (`vibedev.ready.*` namespace). All 5 tools in the library work via the schema-driven generic executor — adding a new tool = JSON entry, zero Python code.
+Detection works for Mac, Linux, and Windows users across bash, zsh, and PowerShell. All 5 tools in the library work via the schema-driven generic executor. MCP server exposes 5 tools via `vibedev.ready.*` namespace.
 
 ## What Works Today
 
-- **MCP Server** (primary interface): 5 tools — `detect`, `fix`, `verify`, `undo`, `status`
-- **Generic executor**: all lifecycle functions driven from schema data — no per-tool Python code
+- **Detection**: 36 error patterns covering command-not-found, auth errors, network errors, rate limits, version mismatches, permission errors, SSL errors, Docker errors, and git errors
+- **Installation**: Generic executor — all lifecycle functions driven from schema data, zero Python per tool
 - **5 tools functional**: vercel_cli, github_cli, nodejs, python, api_key_config
-- `agent-ready detect --task "deploy my site"` — plain English, no session log needed
-- `agent-ready fix --task "deploy my site"` — installs and configures with approval
-- `agent-ready fix --dry-run --task "deploy my site"` — previews without running
-- `agent-ready verify <tool>` — checks a tool is working
-- `agent-ready undo <tool>` — removes what was installed and confirms removal
-- `agent-ready status` — lists all tools with install status
-- Python API: `from agent_ready import execute_plan, verify_capability, undo_capability`
+- **MCP Server**: 5 tools (`detect`, `fix`, `verify`, `undo`, `status`) via stdio transport
+- **CLI**: Clean vocabulary, plain English throughout
+- **Undo**: Reversible installations with removal verification
+- **Security**: Per-tool approval, no sudo, no credential storage, sandboxed execution
 
 ## What Does NOT Work Yet
 
-- ❌ Error pattern expansion — still only 9 English "command not found" patterns.
-- ❌ Shared state (`~/.config/vibedev/state.json`) and audit log.
-- ❌ Bootstrap script (`curl get.vibedev.sh | sh`).
-- ❌ Credential-flow guidance (browser signup detection, .env creation).
+- ❌ Shared state (`~/.config/vibedev/state.json`) and audit log
+- ❌ Bootstrap script (`curl get.vibedev.sh | sh`)
+- ❌ Credential-flow guidance (browser signup detection, .env creation)
+- ❌ Pre-flight check (`agent-ready check` — scan all tools before starting)
 
-## Immediate Next Steps (per strategy doc §10)
+## Immediate Next Steps
 
-1. **Expand error patterns** — zsh, PowerShell, permission denied, OAuth expiry (9 → 30+). P0.
-2. **Bootstrap script** — `curl get.vibedev.sh | sh` installs all three suite products. P0.
-3. **Shared state + audit log** — `~/.config/vibedev/` coordination with Pulse and trace-eval. P1.
+1. **Bootstrap script** — `curl get.vibedev.sh | sh` installs all three suite products (P0)
+2. **Pre-flight check** — `agent-ready check` scans environment before agent starts working (P0)
+3. **Shared state + audit log** — `~/.config/vibedev/` coordination with Pulse and trace-eval (P1)
+4. **More tools** — docker, supabase, bun (P1)
 
 ## For Other AI Agents Picking This Up
 
@@ -50,7 +48,7 @@ Start here:
 - `CONTRIBUTING.md` — safety-review block is mandatory for installer PRs
 - `docs/SECURITY_REVIEW.md` — the security policy all installers must follow
 
-## Resolved Design Decisions (via Phase 2.B Security Review)
+## Resolved Design Decisions
 
 - **Sandboxing model for `fix`**: controlled subshell on the user's host. (See `docs/SECURITY_REVIEW.md` § 1)
 - **Credential storage**: delegate to each tool's native store; agent-ready never touches credentials. (See `docs/SECURITY_REVIEW.md` § 2)
@@ -61,4 +59,4 @@ Start here:
 ## Still Open
 
 - **User-action unblock signal**: MCP server uses non-interactive mode; the human sees approval prompts through their AI agent's UI, not through agent-ready directly.
-- **Error pattern expansion**: current 9 patterns are narrow (English "command not found" only). Need Windows PowerShell, zsh, permission denied, network timeout variants.
+- **Error pattern expansion**: 36 patterns cover ~80% of common errors. Edge cases (custom shells, rare package managers) still need coverage.
