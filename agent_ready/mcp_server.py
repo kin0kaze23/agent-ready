@@ -1,10 +1,11 @@
 """MCP server for agent-ready.
 
-Exposes four tools to AI agents:
-  - vibedev.ready.detect  — scan a task or log for missing capabilities
-  - vibedev.ready.fix     — install and configure missing capabilities
-  - vibedev.ready.verify  — check if a capability is working
+Exposes five tools to AI agents:
+  - vibedev.ready.detect  — scan a task or log for missing tools
+  - vibedev.ready.fix     — install and configure missing tools
+  - vibedev.ready.verify  — check if a tool is working
   - vibedev.ready.undo    — remove what was installed
+  - vibedev.ready.status  — list all tools and their install status
 
 Uses stdio transport so AI agents (Claude Code, Cursor, Codex CLI) can
 call these tools natively as subprocess servers.
@@ -40,8 +41,8 @@ def detect(task: str = "", log: str = "") -> dict:
 
     Returns:
         A dict with:
-        - found: number of missing capabilities detected
-        - items: list of missing capabilities with plain-English descriptions
+        - found: number of missing tools detected
+        - items: list of missing tools with plain-English descriptions
         - needs_action: whether any user approval steps are needed
         - plan: the full machine-readable plan (for agent consumption)
     """
@@ -90,7 +91,7 @@ def fix(task: str = "", log: str = "", approve: bool = False) -> dict:
 
     Returns:
         When approve=False: a preview of what would be set up.
-        When approve=True: results for each capability with success/failure status.
+        When approve=True: results for each tool with success/failure status.
     """
     if task:
         plan = plan_from_task(task)
@@ -155,30 +156,30 @@ def fix(task: str = "", log: str = "", approve: bool = False) -> dict:
 
 
 @mcp.tool()
-def verify(capability_id: str) -> dict:
-    """Check if a specific capability is installed and working.
+def verify(tool_id: str) -> dict:
+    """Check if a specific tool is installed and working.
 
     Args:
-        capability_id: The tool identifier, e.g. "vercel_cli", "github_cli", "nodejs".
+        tool_id: The tool identifier, e.g. "vercel_cli", "github_cli", "nodejs".
 
     Returns:
         A dict with:
-        - capability_id: the tool that was checked
+        - tool_id: the tool that was checked
         - description: plain-English description of what it does
         - working: True if the tool is installed and verified
         - message: human-readable status
     """
-    cap = by_id(capability_id)
+    cap = by_id(tool_id)
     if not cap:
         available = list(load_registry().keys())
         return {
             "status": "error",
-            "message": f"I don't know about '{capability_id}'. Available: {', '.join(available)}",
+            "message": f"I don't know about '{tool_id}'. Available: {', '.join(available)}",
         }
 
     ok = verify_capability(cap)
     return {
-        "capability_id": capability_id,
+        "tool_id": tool_id,
         "description": cap.plain_english,
         "working": ok,
         "message": f"{cap.plain_english} is working."
@@ -188,32 +189,32 @@ def verify(capability_id: str) -> dict:
 
 
 @mcp.tool()
-def undo(capability_id: str) -> dict:
-    """Remove a capability that was previously installed.
+def undo(tool_id: str) -> dict:
+    """Remove a tool that was previously installed.
 
     This reverses the install, cleans up configuration, and verifies removal.
 
     Args:
-        capability_id: The tool identifier, e.g. "vercel_cli", "github_cli".
+        tool_id: The tool identifier, e.g. "vercel_cli", "github_cli".
 
     Returns:
         A dict with:
-        - capability_id: the tool that was removed
+        - tool_id: the tool that was removed
         - description: plain-English description
         - removed: True if successfully removed
         - message: human-readable status
     """
-    cap = by_id(capability_id)
+    cap = by_id(tool_id)
     if not cap:
         available = list(load_registry().keys())
         return {
             "status": "error",
-            "message": f"I don't know about '{capability_id}'. Available: {', '.join(available)}",
+            "message": f"I don't know about '{tool_id}'. Available: {', '.join(available)}",
         }
 
     ok = undo_capability(cap)
     return {
-        "capability_id": capability_id,
+        "tool_id": tool_id,
         "description": cap.plain_english,
         "removed": ok,
         "message": f"{cap.plain_english} has been removed."
@@ -224,22 +225,22 @@ def undo(capability_id: str) -> dict:
 
 @mcp.tool()
 def status() -> dict:
-    """List all available capabilities and whether they are installed.
+    """List all available tools and whether they are installed.
 
     Returns:
         A dict with:
-        - total: number of capabilities in the registry
-        - installed: number of capabilities currently installed and working
-        - capabilities: list of all capabilities with their install status
+        - total: number of tools in the library
+        - installed: number of tools currently installed and working
+        - tools: list of all tools with their install status
     """
-    capabilities = []
+    tools = []
     installed_count = 0
     for cap in load_registry().values():
         is_installed = lifecycle_detect(cap)
         if is_installed:
             installed_count += 1
 
-        capabilities.append(
+        tools.append(
             {
                 "id": cap.id,
                 "description": cap.plain_english,
@@ -248,9 +249,9 @@ def status() -> dict:
         )
 
     return {
-        "total": len(capabilities),
+        "total": len(tools),
         "installed": installed_count,
-        "capabilities": capabilities,
+        "tools": tools,
     }
 
 

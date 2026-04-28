@@ -25,7 +25,7 @@ def test_detect_from_task_returns_empty_for_unknown():
     assert result["items"] == []
 
 
-def test_detect_from_log_finds_capabilities():
+def test_detect_from_log_finds_tools():
     result = detect(log="command not found: vercel\ncommand not found: gh")
     assert result["found"] >= 1
 
@@ -43,9 +43,9 @@ def test_fix_preview_returns_steps():
     result = fix(task="deploy my portfolio", approve=False)
     assert result["status"] == "preview"
     assert len(result["capabilities"]) >= 1
-    # Each capability should have a list of steps
-    for cap in result["capabilities"]:
-        assert isinstance(cap["steps"], list)
+    # Each tool should have a list of steps
+    for tool in result["capabilities"]:
+        assert isinstance(tool["steps"], list)
 
 
 def test_fix_empty_returns_ok():
@@ -65,14 +65,14 @@ def test_fix_requires_task_or_log():
 
 def test_verify_vercel_returns_working_status():
     result = verify("vercel_cli")
-    assert "capability_id" in result
-    assert result["capability_id"] == "vercel_cli"
+    assert "tool_id" in result
+    assert result["tool_id"] == "vercel_cli"
     assert "working" in result
     assert "message" in result
 
 
-def test_verify_unknown_capability_returns_error():
-    result = verify("not_a_real_capability")
+def test_verify_unknown_tool_returns_error():
+    result = verify("not_a_real_tool")
     assert result["status"] == "error"
     assert "don't know about" in result["message"]
 
@@ -80,8 +80,8 @@ def test_verify_unknown_capability_returns_error():
 # --- undo ------------------------------------------------------------------
 
 
-def test_undo_unknown_capability_returns_error():
-    result = undo("not_a_real_capability")
+def test_undo_unknown_tool_returns_error():
+    result = undo("not_a_real_tool")
     assert result["status"] == "error"
     assert "don't know about" in result["message"]
 
@@ -89,18 +89,18 @@ def test_undo_unknown_capability_returns_error():
 # --- status ----------------------------------------------------------------
 
 
-def test_status_returns_registry_count():
+def test_status_returns_library_count():
     result = status()
     assert result["total"] >= 5
     assert "installed" in result
-    assert "capabilities" in result
-    assert len(result["capabilities"]) == result["total"]
+    assert "tools" in result
+    assert len(result["tools"]) == result["total"]
 
 
-def test_status_each_capability_has_required_fields():
+def test_status_each_tool_has_required_fields():
     result = status()
-    for cap in result["capabilities"]:
-        assert "id" in cap
-        assert "description" in cap
-        assert "installed" in cap
-        assert isinstance(cap["installed"], bool)
+    for tool in result["tools"]:
+        assert "id" in tool
+        assert "description" in tool
+        assert "installed" in tool
+        assert isinstance(tool["installed"], bool)

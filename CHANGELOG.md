@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0 (2026-04-26)
+
+### Added
+
+- **MCP server** (`agent_ready/mcp_server.py`) — 5 tools (`detect`, `fix`, `verify`, `undo`, `status`) exposed via `vibedev.ready.*` namespace with stdio transport for AI agents.
+- **Generic capability executor** (`agent_ready/capabilities/generic.py`) — all 5 lifecycle functions driven from schema data. Adding a new tool = JSON entry only, zero Python code.
+- **All 5 tools functional** — vercel_cli, github_cli, nodejs, python, api_key_config all work via the generic executor.
+- **Vocabulary sweep** — replaced developer jargon across CLI output, MCP docstrings, and README: "capability" → "tool", "registry" → "library", "schema" → "format", "dry-run" → "preview".
+- 15 new tests for the generic executor. 82 total tests passing.
+
+### Changed
+
+- Version bumped to 0.4.0.
+- CLI output uses clean vocabulary throughout.
+- MCP tool docstrings use plain English, no developer jargon.
+
 ## 0.3.0 (2026-04-24)
 
 ### Added

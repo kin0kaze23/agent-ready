@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-ready"
-version = "0.3.0"
+version = "0.4.0"
 description = "Detect what your AI agent is missing. Install it. Get ready."
 readme = "README.md"
 license = { text = "MIT" }

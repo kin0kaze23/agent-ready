@@ -1,13 +1,14 @@
 """agent-ready: Detect what your AI agent is missing. Install it. Get ready.
 
-Phase 2.C status:
-  * `detect` is live — text / trace-eval scorecard / synthetic diagnose / task phrase.
-  * `fix` / `verify` / `undo` are live — per-capability approval, sandboxed execution.
+v0.4.0 status:
+  * `detect` is live — text / session report / task phrase.
+  * `fix` / `verify` / `undo` are live — generic executor, schema-driven.
+  * MCP server is live — 5 tools via `vibedev.ready.*` namespace.
 """
 
 from __future__ import annotations
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 from agent_ready.adapters import (
     is_trace_eval_scorecard,

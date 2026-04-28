@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-**Pairs with:** [trace-eval](https://github.com/kin0kaze23/trace-eval) — `trace-eval` finds the gap, `agent-ready` fixes it.
+**Pairs with:** [trace-eval](https://github.com/kin0kaze23/trace-eval) — `trace-eval` scores the session, `agent-ready` fixes the gaps.
 
 ---
 
@@ -58,31 +58,31 @@ Verify it works:
 
 ```bash
 agent-ready status
-# agent-ready 0.2.0 — 5 capabilities in registry:
-#   • vercel_cli           Vercel CLI
-#   • github_cli           GitHub CLI
-#   • nodejs               Node.js
-#   • python               Python
-#   • api_key_config       API Key Configuration
+# agent-ready 0.4.0 — 5 tools:
+#   • The tool that puts your website on the internet.
+#   • The tool that connects your code to GitHub.
+#   • The tool that runs JavaScript code on your computer.
+#   • The tool that runs Python code on your computer.
+#   • Secret keys so your app can connect to outside services.
 ```
 
 ---
 
 ## Quick Start
 
-### 1. Detect from a plain-English task (no trace needed)
+### 1. Detect from a plain-English task (no session log needed)
 
 ```bash
 agent-ready detect --task "deploy my portfolio to production"
 ```
 
 ```
-agent-ready • 1 thing to set up:
-  • Vercel CLI — The tool that puts your website on the internet.
+I found 1 thing to set up:
+  • The tool that puts your website on the internet.
 
-Some steps need your input (account signup, sign-in, or an API key).
+A few steps need your help (like signing up or signing in). I'll guide you through each one.
 
-Next: review with `agent-ready fix --dry-run` before anything is installed.
+Run `agent-ready fix --task "..."` to set everything up.
 ```
 
 ### 2. Detect from a real agent session log
@@ -91,7 +91,7 @@ Next: review with `agent-ready fix --dry-run` before anything is installed.
 cat session.log | agent-ready detect
 ```
 
-Scans the raw text against known error patterns and maps them to missing capabilities. Works with any agent that outputs readable error text.
+Scans the raw text against known error patterns and maps them to missing tools. Works with any agent that outputs readable error text.
 
 ### 3. Detect from trace-eval output
 
@@ -115,18 +115,18 @@ See [docs/EXAMPLES.md](docs/EXAMPLES.md) for the full usage guide and [docs/AGEN
   Agent tries a task → fails
         │
         ▼
-  ┌────────────────┐   diagnose.json   ┌──────────────────┐
+  ┌────────────────┐   session report   ┌──────────────────┐
   │   trace-eval   │ ─────────────────▶│   agent-ready    │
-  │   diagnose     │                   │   detect + fix   │
+  │   score        │                   │   detect + fix   │
   └────────────────┘                   └────────┬─────────┘
                                                 │
                                                 ▼
-                                      User approves each step
-                                      → install → account → auth → verify
+                                       User approves each step
+                                       → install → account → auth → verify
                                                 │
                                                 ▼
-                                      Agent retries → trace-eval confirms
-                                      score improvement
+                                       Agent retries → trace-eval confirms
+                                       score improvement
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full system design and [docs/DESIGN.md](docs/DESIGN.md) for the non-dev UX principles.
@@ -135,19 +135,17 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full system design and 
 
 ## Current Status
 
-**v0.2.0 — Phase 1 + Phase 2.A complete.** 41 tests passing, CI green.
+**v0.4.0 — MCP server live, generic executor active.** 82 tests passing, CI green.
 
 | Feature | Status |
 |---------|--------|
-| Capability registry (5 capabilities) | ✅ Live |
+| Tool library (5 tools) | ✅ Live |
 | Error pattern detection (9 patterns) | ✅ Live |
 | `detect` from task phrase | ✅ Live |
-| `detect` from raw trace text | ✅ Live |
-| `detect` from trace-eval scorecard | ✅ Live (see [known limits](docs/INTEGRATION.md#known-limits--real-scorecard-precision)) |
-| `detect` from synthetic diagnose | ✅ Live |
-| `fix` / `verify` / `undo` | 🟡 Security review in progress (PR #3) |
-| Real capability installers | 🔒 Blocked on security review merge |
-| MCP server | 🔒 Phase 2.D (after installers ship) |
+| `detect` from session log | ✅ Live |
+| `detect` from trace-eval report | ✅ Live |
+| `fix` / `verify` / `undo` | ✅ Live — generic executor, schema-driven |
+| MCP server (5 tools) | ✅ Live — `vibedev.ready.*` namespace |
 
 ---
 
@@ -155,9 +153,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full system design and 
 
 `agent-ready fix` installs software and writes configuration. It is a HIGH-RISK tool by design.
 
-- **Never installs without approval** — one approval per capability, not one blanket yes.
+- **Never installs without approval** — one approval per tool, not one blanket yes.
 - **Never stores credentials** — secrets go to the user's keychain / `.env` / the tool's native store.
-- **Every action is reversible** — `agent-ready undo <capability>` removes what was installed.
+- **Every action is reversible** — `agent-ready undo <tool>` removes what was installed.
 - **Verify after install** — never report success based on a return code alone.
 
 See [SECURITY.md](SECURITY.md) for our full security policy and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the verification layer design.
@@ -166,15 +164,17 @@ See [SECURITY.md](SECURITY.md) for our full security policy and [docs/ARCHITECTU
 
 ## Contributing
 
-We welcome contributions! Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Every capability-adding PR requires a safety review — see the template.
+We welcome contributions! Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Every tool-adding PR requires a safety review — see the template.
 
-### Adding a capability
+### Adding a tool
 
 1. Open a [capability-gap issue](https://github.com/kin0kaze23/agent-ready/issues/new?template=capability-gap.yml).
-2. Add the capability entry to `schema/capabilities.v1.json`.
+2. Add the tool entry to `schema/capabilities.v1.json`.
 3. Add matching error patterns to `schema/error-patterns.v1.json`.
 4. Write tests, run `pytest tests/ -q` and `ruff check .`.
 5. Open a PR with the required `## Safety review` block.
+
+No Python code needed — the generic executor reads from schema data automatically.
 
 See [docs/EXAMPLES.md § Extending the registry](docs/EXAMPLES.md#7-extending-the-registry-for-contributors--ai-agents) for the full walkthrough.
 
@@ -184,9 +184,9 @@ See [docs/EXAMPLES.md § Extending the registry](docs/EXAMPLES.md#7-extending-th
 
 Source of truth: [docs/ROADMAP.md](docs/ROADMAP.md). High-level priorities:
 
-- **Phase 2.C** — Real installers (starting with `vercel_cli`): detect → install → auth → verify → undo.
-- **Phase 2.D** — MCP server so AI agents can call agent-ready as native tools.
-- **Phase 2.B+** — More capabilities, more error patterns, broader OS support.
+- **Expand error patterns** — zsh, PowerShell, permission denied, OAuth expiry (9 → 30+)
+- **Bootstrap script** — `curl get.vibedev.sh | sh` one-command install for the full suite
+- **Shared state** — `~/.config/vibedev/` coordination with Pulse and trace-eval
 
 ---
 

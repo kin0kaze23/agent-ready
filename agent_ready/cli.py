@@ -75,7 +75,7 @@ def _cmd_status(_: argparse.Namespace) -> int:
     from agent_ready.registry import load_registry
 
     registry = load_registry()
-    print(f"agent-ready {__version__} — {len(registry)} tools in the registry:")
+    print(f"agent-ready {__version__} — {len(registry)} tools:")
     for cap in registry.values():
         print(f"  • {cap.plain_english}")
     return 0
@@ -193,7 +193,7 @@ def _build_parser() -> argparse.ArgumentParser:
     undo_p.add_argument("capability", nargs="?", help="Tool ID, e.g. vercel_cli")
     undo_p.set_defaults(func=_cmd_undo)
 
-    status_p = sub.add_parser("status", help="List all tools in the registry")
+    status_p = sub.add_parser("status", help="List all tools")
     status_p.set_defaults(func=_cmd_status)
 
     schema_p = sub.add_parser("schema", help="Show schema file locations")
