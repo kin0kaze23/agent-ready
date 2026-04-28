@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/kin0kaze23/trace-eval/schema/error-patterns.v1.json",
   "title": "Error Pattern Catalog (v1) — canonical in agent-ready",
-  "description": "Regex catalog for detecting missing-capability signals in raw agent trace text. Canonical here; trace-eval v0.5.0 does not own this catalog (it uses a different, event-based detection model). See docs/INTEGRATION.md for the Phase 2 plan to bridge both.",
+  "description": "Regex catalog for detecting missing-capability signals in raw agent trace text. Covers bash, zsh, PowerShell, network errors, auth failures, rate limits, and dependency errors. Canonical here; trace-eval v0.5.0 does not own this catalog (it uses a different, event-based detection model). See docs/INTEGRATION.md for the Phase 2 plan to bridge both.",
   "schema_version": "1.0.0",
   "patterns": [
     {
@@ -17,7 +17,7 @@
     {
       "id": "cmd_not_found_gh",
       "category": "missing_tool",
-      "regex": "(?i)(command not found:\\s*gh|gh:\\s*command not found)",
+      "regex": "(?i)\\b(command not found:\\s*gh|gh:\\s*command not found)\\b",
       "human": "The GitHub tool (gh CLI) isn't installed.",
       "maps_to_capability": "github_cli",
       "confidence_base": 0.95,
@@ -85,6 +85,249 @@
       "maps_to_capability": "nodejs",
       "confidence_base": 0.9,
       "evidence_hint": "Node require/import error."
+    },
+    {
+      "id": "zsh_cmd_not_found_vercel",
+      "category": "missing_tool",
+      "regex": "(?i)zsh:\\s*command not found:\\s*vercel",
+      "human": "The deployment tool (Vercel) isn't installed.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.95,
+      "evidence_hint": "zsh shell reporting vercel is missing."
+    },
+    {
+      "id": "zsh_cmd_not_found_gh",
+      "category": "missing_tool",
+      "regex": "(?i)zsh:\\s*command not found:\\s*gh\\b",
+      "human": "The GitHub tool (gh CLI) isn't installed.",
+      "maps_to_capability": "github_cli",
+      "confidence_base": 0.95,
+      "evidence_hint": "zsh shell reporting gh is missing."
+    },
+    {
+      "id": "zsh_cmd_not_found_node",
+      "category": "missing_tool",
+      "regex": "(?i)zsh:\\s*command not found:\\s*node",
+      "human": "Node.js isn't installed.",
+      "maps_to_capability": "nodejs",
+      "confidence_base": 0.98,
+      "evidence_hint": "zsh shell reporting node is missing."
+    },
+    {
+      "id": "zsh_cmd_not_found_python",
+      "category": "missing_tool",
+      "regex": "(?i)zsh:\\s*command not found:\\s*python3?\\b",
+      "human": "Python isn't installed.",
+      "maps_to_capability": "python",
+      "confidence_base": 0.98,
+      "evidence_hint": "zsh shell reporting python is missing."
+    },
+    {
+      "id": "powershell_not_recognized_vercel",
+      "category": "missing_tool",
+      "regex": "(?i)('vercel'|\"vercel\")\\s+is not recognized",
+      "human": "The deployment tool (Vercel) isn't installed.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.95,
+      "evidence_hint": "Windows PowerShell reporting vercel is missing."
+    },
+    {
+      "id": "powershell_not_recognized_gh",
+      "category": "missing_tool",
+      "regex": "(?i)('gh'|\"gh\")\\s+is not recognized",
+      "human": "The GitHub tool (gh CLI) isn't installed.",
+      "maps_to_capability": "github_cli",
+      "confidence_base": 0.95,
+      "evidence_hint": "Windows PowerShell reporting gh is missing."
+    },
+    {
+      "id": "powershell_not_recognized_node",
+      "category": "missing_tool",
+      "regex": "(?i)('node'|\"node\")\\s+is not recognized",
+      "human": "Node.js isn't installed.",
+      "maps_to_capability": "nodejs",
+      "confidence_base": 0.98,
+      "evidence_hint": "Windows PowerShell reporting node is missing."
+    },
+    {
+      "id": "powershell_not_recognized_python",
+      "category": "missing_tool",
+      "regex": "(?i)('python'|\"python\"|'python3'|\"python3\")\\s+is not recognized",
+      "human": "Python isn't installed.",
+      "maps_to_capability": "python",
+      "confidence_base": 0.98,
+      "evidence_hint": "Windows PowerShell reporting python is missing."
+    },
+    {
+      "id": "permission_denied_exec",
+      "category": "missing_tool",
+      "regex": "(?i)(permission denied.*\\b(vercel|gh|node|python)\\b|EACCES.*permission denied)",
+      "human": "A tool is installed but doesn't have permission to run.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.8,
+      "evidence_hint": "Permission denied on a tool executable. May need chmod or reinstall."
+    },
+    {
+      "id": "docker_socket_denied",
+      "category": "missing_tool",
+      "regex": "(?i)(permission denied.*docker\\.sock|connect to the Docker daemon socket)",
+      "human": "Docker is installed but you don't have permission to use it.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.85,
+      "evidence_hint": "Docker daemon permission error. May need user added to docker group."
+    },
+    {
+      "id": "npm_install_failed",
+      "category": "missing_tool",
+      "regex": "(?i)(npm\\s+ERR!\\s+code\\s+ENOTFOUND|npm\\s+ERR!\\s+network|npm\\s+install.*failed)",
+      "human": "Node's package manager couldn install a tool.",
+      "maps_to_capability": "nodejs",
+      "confidence_base": 0.8,
+      "evidence_hint": "npm network or install error. May need internet or registry fix."
+    },
+    {
+      "id": "pip_install_failed",
+      "category": "missing_tool",
+      "regex": "(?i)(pip\\s+install.*failed|ERROR: Could not find a version that satisfies the requirement)",
+      "human": "Python's package manager couldn't install a dependency.",
+      "maps_to_capability": "python",
+      "confidence_base": 0.8,
+      "evidence_hint": "pip install error. May need a different package name or version."
+    },
+    {
+      "id": "brew_install_failed",
+      "category": "missing_tool",
+      "regex": "(?i)(brew\\s+install.*Error|Homebrew.*failed|Error:\\s+No available formula)",
+      "human": "Homebrew couldn't install a tool.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.75,
+      "evidence_hint": "Homebrew formula not found or install failed."
+    },
+    {
+      "id": "network_timeout",
+      "category": "missing_tool",
+      "regex": "(?i)(ETIMEDOUT|Connection timed out|Request timed out|read ECONNRESET)",
+      "human": "A network request timed out during installation.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.6,
+      "evidence_hint": "Network timeout. May be transient — retry could help."
+    },
+    {
+      "id": "dns_resolution_failed",
+      "category": "missing_tool",
+      "regex": "(?i)(ENOTFOUND|getaddrinfo ENOTFOUND|Could not resolve host)",
+      "human": "The installer couldn't reach the download server.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.55,
+      "evidence_hint": "DNS resolution failure. Check internet connection."
+    },
+    {
+      "id": "connection_refused",
+      "category": "missing_tool",
+      "regex": "(?i)(ECONNREFUSED|Connection refused|unable to connect to server)",
+      "human": "The installer couldn't connect to the server.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.55,
+      "evidence_hint": "Connection refused. Server may be down or blocked by firewall."
+    },
+    {
+      "id": "token_expired_vercel",
+      "category": "missing_auth",
+      "regex": "(?i)(vercel.*token.*expir|vercel.*session.*expir|vercel.*unauthorized)",
+      "human": "Your Vercel sign-in session has expired.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.9,
+      "evidence_hint": "Vercel auth token or session expiry."
+    },
+    {
+      "id": "token_expired_gh",
+      "category": "missing_auth",
+      "regex": "(?i)(gh.*token.*expir|gh.*bad credentials|http 401.*unauthorized.*gh)",
+      "human": "Your GitHub sign-in session has expired.",
+      "maps_to_capability": "github_cli",
+      "confidence_base": 0.9,
+      "evidence_hint": "GitHub CLI auth token expiry."
+    },
+    {
+      "id": "api_key_expired",
+      "category": "missing_auth",
+      "regex": "(?i)(api key.*expired|token.*expired|authentication.*expired|session.*expired)",
+      "human": "An API key or session has expired.",
+      "maps_to_capability": "api_key_config",
+      "confidence_base": 0.75,
+      "evidence_hint": "Generic expiry — context needed to determine which service."
+    },
+    {
+      "id": "rate_limit_npm",
+      "category": "missing_tool",
+      "regex": "(?i)(npm\\s+ERR!\\s+429|rate limit exceeded|too many requests.*npm)",
+      "human": "The package server is limiting how many downloads you can make.",
+      "maps_to_capability": "nodejs",
+      "confidence_base": 0.8,
+      "evidence_hint": "npm rate limit. Wait a moment and try again."
+    },
+    {
+      "id": "rate_limit_pypi",
+      "category": "missing_tool",
+      "regex": "(?i)(429.*pypi|HTTP error 429.*pip|rate limit.*pypi)",
+      "human": "The Python package server is limiting downloads.",
+      "maps_to_capability": "python",
+      "confidence_base": 0.8,
+      "evidence_hint": "PyPI rate limit. Wait a moment and try again."
+    },
+    {
+      "id": "node_version_too_old",
+      "category": "missing_tool",
+      "regex": "(?i)(requires node\\.js\\s*>=|node.*version.*too old|minimum node version)",
+      "human": "Your Node.js version is too old for this tool.",
+      "maps_to_capability": "nodejs",
+      "confidence_base": 0.9,
+      "evidence_hint": "Node version mismatch. Upgrade Node.js."
+    },
+    {
+      "id": "python_version_too_old",
+      "category": "missing_tool",
+      "regex": "(?i)(requires python\\s*>=|python.*version.*too old|minimum python version)",
+      "human": "Your Python version is too old for this tool.",
+      "maps_to_capability": "python",
+      "confidence_base": 0.9,
+      "evidence_hint": "Python version mismatch. Upgrade Python."
+    },
+    {
+      "id": "git_not_found",
+      "category": "missing_tool",
+      "regex": "(?i)(command not found:\\s*git|git:\\s*command not found|zsh:\\s*command not found:\\s*git|'git' is not recognized)",
+      "human": "Git isn't installed on your computer.",
+      "maps_to_capability": "github_cli",
+      "confidence_base": 0.95,
+      "evidence_hint": "Git command not found. Install git first."
+    },
+    {
+      "id": "git_not_configured",
+      "category": "missing_auth",
+      "regex": "(?i)(fatal:\\s+could not read Username|fatal:\\s+Authentication failed|Please tell me who you are.*git config)",
+      "human": "Git is installed but you haven't set up your name and email yet.",
+      "maps_to_capability": "github_cli",
+      "confidence_base": 0.85,
+      "evidence_hint": "Git needs your name and email configured."
+    },
+    {
+      "id": "ssl_certificate_error",
+      "category": "missing_tool",
+      "regex": "(?i)(SSL certificate problem|unable to get local issuer certificate|self.signed certificate)",
+      "human": "The installer couldn't verify the server's security certificate.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.6,
+      "evidence_hint": "SSL certificate error. May need to update CA certificates."
+    },
+    {
+      "id": "docker_not_found",
+      "category": "missing_tool",
+      "regex": "(?i)(command not found:\\s*docker|docker:\\s*command not found|'docker' is not recognized)",
+      "human": "Docker isn't installed on your computer.",
+      "maps_to_capability": "vercel_cli",
+      "confidence_base": 0.95,
+      "evidence_hint": "Docker command not found. Install Docker Desktop."
     }
   ]
 }
