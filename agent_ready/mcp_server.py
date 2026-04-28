@@ -19,6 +19,7 @@ from agent_ready.adapters.text import plan_from_text
 from agent_ready.plan import render_machine
 from agent_ready.executor import verify_capability, undo_capability
 from agent_ready.registry import by_id, load_registry
+from agent_ready.capabilities.generic import lifecycle_detect
 
 mcp = FastMCP(
     "agent-ready",
@@ -234,15 +235,7 @@ def status() -> dict:
     capabilities = []
     installed_count = 0
     for cap in load_registry().values():
-        from agent_ready.sandbox import run_step
-
-        cmd = cap.detect.get("command", "")
-        if cmd:
-            result = run_step(cmd, timeout=10)
-            is_installed = result["exit_code"] == 0
-        else:
-            is_installed = False
-
+        is_installed = lifecycle_detect(cap)
         if is_installed:
             installed_count += 1
 
