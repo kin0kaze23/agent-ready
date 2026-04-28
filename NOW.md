@@ -6,38 +6,39 @@
 
 This repo is one engine in the **AI Workstation Suite** (Pulse · trace-eval · agent-ready). The suite-level strategy lives at `/Users/jonathannugroho/Developer/PersonalProjects/AI_WORKSTATION_SUITE.md`.
 
-**agent-ready's role:** the capability layer — detect missing tools/keys/skills, install them with per-action approval, verify they work, and undo cleanly. The long-term moat is the community capability manifest (§6 of the strategy doc).
+**agent-ready's role:** the tool library — detect missing tools/keys/skills, install them with per-action approval, verify they work, and undo cleanly. The long-term moat is the community tool manifest (§6 of the strategy doc).
 
 ## Status
 
-**v0.3.0 — Phase 2.C + 2.D complete.** 67 tests pass, ruff clean. MCP server live.
+**v0.4.0 — MCP server live, generic executor active, vocabulary clean.** 82 tests pass, ruff clean.
 
-AI agents can now call agent-ready natively via MCP (`vibedev.ready.detect`, `fix`, `verify`, `undo`, `status`). The CLI remains available for humans who want to type commands.
+AI agents call agent-ready natively via MCP (`vibedev.ready.*` namespace). All 5 tools in the library work via the schema-driven generic executor — adding a new tool = JSON entry, zero Python code.
 
 ## What Works Today
 
-- **MCP Server** (primary interface): 5 tools exposed to AI agents via stdio
-- `agent-ready detect --task "deploy my site"` — intent-based, no trace needed
+- **MCP Server** (primary interface): 5 tools — `detect`, `fix`, `verify`, `undo`, `status`
+- **Generic executor**: all lifecycle functions driven from schema data — no per-tool Python code
+- **5 tools functional**: vercel_cli, github_cli, nodejs, python, api_key_config
+- `agent-ready detect --task "deploy my site"` — plain English, no session log needed
 - `agent-ready fix --task "deploy my site"` — installs and configures with approval
-- `agent-ready fix --dry-run --task "deploy my site"` — previews what would happen
-- `agent-ready verify vercel_cli` — checks a capability is working
-- `agent-ready undo vercel_cli` — removes what was installed and confirms removal
-- `agent-ready status` — lists all tools in the registry
+- `agent-ready fix --dry-run --task "deploy my site"` — previews without running
+- `agent-ready verify <tool>` — checks a tool is working
+- `agent-ready undo <tool>` — removes what was installed and confirms removal
+- `agent-ready status` — lists all tools with install status
 - Python API: `from agent_ready import execute_plan, verify_capability, undo_capability`
 
 ## What Does NOT Work Yet
 
-- ❌ Additional capability installers — only `vercel_cli` has real code. `github_cli`, `nodejs`, `python` are in the schema but have no Python modules.
 - ❌ Error pattern expansion — still only 9 English "command not found" patterns.
 - ❌ Shared state (`~/.config/vibedev/state.json`) and audit log.
 - ❌ Bootstrap script (`curl get.vibedev.sh | sh`).
+- ❌ Credential-flow guidance (browser signup detection, .env creation).
 
 ## Immediate Next Steps (per strategy doc §10)
 
-1. **Ship 3 more capability installers** — `github_cli`, `nodejs`, `python` (P0, days 0–30)
-2. **Expand error patterns** — zsh, PowerShell, permission denied, OAuth expiry (P0)
-3. **Vocabulary sweep** — replace forbidden words across CLI output (P0, half-day)
-4. **Shared state + audit log** — `~/.config/vibedev/` coordination with Pulse and trace-eval (P1)
+1. **Expand error patterns** — zsh, PowerShell, permission denied, OAuth expiry (9 → 30+). P0.
+2. **Bootstrap script** — `curl get.vibedev.sh | sh` installs all three suite products. P0.
+3. **Shared state + audit log** — `~/.config/vibedev/` coordination with Pulse and trace-eval. P1.
 
 ## For Other AI Agents Picking This Up
 
@@ -54,7 +55,8 @@ Start here:
 - **Sandboxing model for `fix`**: controlled subshell on the user's host. (See `docs/SECURITY_REVIEW.md` § 1)
 - **Credential storage**: delegate to each tool's native store; agent-ready never touches credentials. (See `docs/SECURITY_REVIEW.md` § 2)
 - **Sudo policy**: never auto-sudo; user-scope installs only; manual sudo if no alternative. (See `docs/SECURITY_REVIEW.md` § 3)
-- **Approval cadence**: per-capability (one yes = all steps for that capability only). (See `docs/SECURITY_REVIEW.md` § 6)
+- **Approval cadence**: per-tool (one yes = all steps for that tool only). (See `docs/SECURITY_REVIEW.md` § 6)
+- **Schema IS implementation**: generic executor reads lifecycle commands from schema — zero Python per new tool.
 
 ## Still Open
 
